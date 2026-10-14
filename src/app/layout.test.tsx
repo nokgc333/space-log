@@ -6,7 +6,9 @@ vi.mock("./fonts", () => ({
   bodyFont: { variable: "font-body-var" },
 }));
 
-import RootLayout from "./layout";
+import { site } from "@/lib/content";
+
+import RootLayout, { metadata } from "./layout";
 
 describe("RootLayout", () => {
   it("marks the document as Japanese and exposes the three font variables", () => {
@@ -16,5 +18,10 @@ describe("RootLayout", () => {
     expect(html.props.className).toContain("font-mono-var");
     expect(html.props.className).toContain("font-body-var");
     expect(html.props.suppressHydrationWarning).toBe(true);
+  });
+
+  it("takes the title and description from the site content", () => {
+    expect(metadata.title).toBe(site.name);
+    expect(metadata.description).toBe(site.description);
   });
 });

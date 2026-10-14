@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { site } from "@/lib/content";
 
 import { bodyFont, displayFont, monoFont } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "space-log",
-  description: "this is space-log website.",
+  metadataBase: new URL(site.url),
+  title: site.name,
+  description: site.description,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
