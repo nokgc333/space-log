@@ -1,0 +1,25 @@
+import { defineConfig, devices } from "@playwright/test";
+
+const PORT = 3100;
+const BASE_URL = `http://localhost:${PORT}`;
+const isCI = Boolean(process.env.CI);
+
+export default defineConfig({
+  testDir: "./e2e",
+  fullyParallel: true,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
+  reporter: isCI ? "github" : "list",
+  use: {
+    baseURL: BASE_URL,
+    trace: "on-first-retry",
+  },
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // Run against a production build so it never collides with a running dev server.
+  webServer: {
+    command: `npm run build && npm run start -- --port ${PORT}`,
+    url: BASE_URL,
+    reuseExistingServer: !isCI,
+    timeout: 120_000,
+  },
+});
