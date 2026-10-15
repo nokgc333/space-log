@@ -1,33 +1,49 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "next-themes";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { ThemeToggle } from "./theme-toggle";
 
-const LABELS = { toLight: "to light", toDark: "to dark" };
+const LABEL = "dark mode";
 
 function renderToggle() {
   return render(
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <ThemeToggle labels={LABELS} />
+      <ThemeToggle label={LABEL} />
     </ThemeProvider>,
   );
 }
 
 describe("ThemeToggle", () => {
-  it("starts in light mode and offers the dark theme", () => {
+  beforeEach(() => {
+    // next-themes remembers the choice here, which would leak between tests
+    localStorage.clear();
+    document.documentElement.classList.remove("dark");
+  });
+
+  it("starts in light mode with the toggle not pressed", () => {
     renderToggle();
-    const button = screen.getByRole("button", { name: LABELS.toDark });
+    const button = screen.getByRole("button", { name: LABEL });
     expect(button).toHaveAttribute("aria-pressed", "false");
   });
 
   it("switches the document to the dark theme when pressed", async () => {
     renderToggle();
-    await userEvent.click(screen.getByRole("button", { name: LABELS.toDark }));
+    await userEvent.click(screen.getByRole("button", { name: LABEL }));
     expect(document.documentElement).toHaveClass("dark");
-    expect(
-      screen.getByRole("button", { name: LABELS.toLight }),
-    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: LABEL })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("switches back to light when pressed twice", async () => {
+    renderToggle();
+    const button = screen.getByRole("button", { name: LABEL });
+    await userEvent.click(button);
+    await userEvent.click(button);
+    expect(document.documentElement).not.toHaveClass("dark");
+    expect(button).toHaveAttribute("aria-pressed", "false");
   });
 });

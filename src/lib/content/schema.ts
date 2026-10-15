@@ -19,7 +19,9 @@ export const siteSchema = z.object({
   nav: z
     .array(z.object({ label: text, href: z.string().startsWith("#") }))
     .min(1),
-  themeLabels: z.object({ toLight: text, toDark: text }),
+    menuLabel: text,
+    skipLabel: text,
+    themeLabel: text,
   contactShortcut: text,
   footer: z.object({
     copyrightStartYear: z.number().int(),

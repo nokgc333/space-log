@@ -2,11 +2,12 @@
 
 import { useTheme } from "next-themes";
 
+import { Mark } from "./mark";
 import { useIsMounted } from "./use-is-mounted";
 
-type Props = { labels: { toLight: string; toDark: string } };
+type Props = { label: string };
 
-export function ThemeToggle({ labels }: Props) {
+export function ThemeToggle({ label }: Props) {
   const { resolvedTheme, setTheme } = useTheme();
   const isMounted = useIsMounted();
   const isDark = isMounted && resolvedTheme === "dark";
@@ -15,11 +16,11 @@ export function ThemeToggle({ labels }: Props) {
     <button
       type="button"
       aria-pressed={isDark}
-      aria-label={isDark ? labels.toLight : labels.toDark}
+      aria-label={label}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="inline-flex size-9 items-center justify-center border border-control font-mono text-xs text-ink hover:bg-ink hover:text-surface"
+      className="inline-flex size-9 items-center justify-center border border-control text-ink hover:bg-ink hover:text-surface"
     >
-      <span aria-hidden="true">{isDark ? "●" : "○"}</span>
+      <Mark isFilled={isDark} />
     </button>
   );
 }

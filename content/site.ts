@@ -10,7 +10,9 @@ export const site = {
     { label: "JOB LOG", href: "#job-log" },
     { label: "CONTACT", href: "#contact" },
   ],
-  themeLabels: { toLight: "ライトモード", toDark: "ダークモード" },
+  menuLabel: "メニュー",
+  skipLabel: "本文へ移動",
+  themeLabel: "ダークモード",
   contactShortcut: "OPEN A TICKET",
   footer: {
     copyrightStartYear: 2026,
