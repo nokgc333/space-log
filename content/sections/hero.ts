@@ -1,10 +1,11 @@
 export const hero = {
   heading: {
     label: "00 / SPACE—LOG",
-    title: "EVERY FRAME, ON RECORD.",
-    subtitle: "すべてのフレームに、記録を。",
-    lead: "ノードを組み、処理を流し、結果を残す。Houdiniとパイプライン開発で、映像制作の「見えない工程」を設計するスタジオです。",
+    title: "RENDER THE UNSEEN.",
+    subtitle: "見えない工程を「描く」。",
+    lead: "一つひとつの処理と、そのつながり。\nHoudini×パイプライン開発で制作の裏側を設計し、結果まで追える形で残すCGスタジオ。",
   },
-  sceneLabel: "回転する金属の球と、その周りに散らばる星の点",
+  sceneLabel:
+    "球の形に集まった点と、それらをつなぐ細い線のネットワーク。カーソルでなぞると、つながりが色づく。",
   sceneFallback: "3D表示に対応していない環境のため、静止画で表示しています。",
 };

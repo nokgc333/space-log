@@ -1,5 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/components/scene/lazy-hero-scene", () => ({
+  LazyHeroScene: () => null,
+}));
 
 import Home from "./page";
 
