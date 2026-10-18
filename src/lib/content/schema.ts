@@ -2,6 +2,15 @@ import { z } from "zod";
 
 const text = z.string().min(1);
 
+const isGitHubUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname === "github.com";
+  } catch {
+    return false;
+  }
+};
+
 const hasUniqueIds = (items: { id: string }[]) =>
   new Set(items.map((item) => item.id)).size === items.length;
 
@@ -41,18 +50,16 @@ export const inversionSchema = z.object({
   body: z.array(text).min(1),
 });
 
-export const changelogSchema = z.object({
+export const newsSchema = z.object({
   heading: sectionHeadingSchema,
-  kindLabels: z.object({ added: text, changed: text, fixed: text }),
-  entries: z
-    .array(
-      z.object({
-        date: z.iso.date(),
-        kind: z.enum(["added", "changed", "fixed"]),
-        text,
-      }),
-    )
-    .min(1),
+  kindLabels: z.object({ added: text, updated: text, fixed: text }),
+  latestCount: z.number().int().positive(),
+});
+
+export const newsEntrySchema = z.object({
+  date: z.iso.date(),
+  kind: z.enum(["added", "updated", "fixed"]),
+  text,
 });
 
 export const pipelineSchema = z.object({
@@ -73,33 +80,31 @@ export const pipelineSchema = z.object({
     .refine(hasUniqueIds, "duplicate stage id"),
 });
 
-export const jobLogSchema = z.object({
+export const toolsSchema = z.object({
   heading: sectionHeadingSchema,
-  columns: z.object({
-    id: text,
-    title: text,
-    status: text,
-    hours: text,
-    result: text,
-  }),
-  statusLabels: z.object({ done: text, running: text }),
+  columns: z.object({ repo: text, tool: text, tags: text, summary: text }),
   toggleLabels: z.object({ open: text, close: text }),
-  toolsLabel: text,
-  jobs: z
+  repoLinkLabel: text.refine(
+    (label) => label.includes("{name}"),
+    "the label needs {name} for the tool name",
+  ),
+  pager: z.object({ prev: text, next: text }),
+  entries: z
     .array(
       z.object({
-        id: z.string().regex(/^JOB-\d{4}$/),
-        title: text,
-        client: text,
-        status: z.enum(["done", "running"]),
-        hours: z.number().nonnegative(),
-        tools: z.array(text).min(1),
-        result: text,
+        id: z.string().regex(/^[a-z-]+$/),
+        name: text,
+        repoUrl: z
+          .string()
+          .refine(isGitHubUrl, "not an https github.com url")
+          .optional(),
+        tags: z.array(text).min(1),
+        summary: text,
         detail: text,
       }),
     )
     .min(1)
-    .refine(hasUniqueIds, "duplicate job id"),
+    .refine(hasUniqueIds, "duplicate tool id"),
 });
 
 export const contactContentSchema = z.object({
@@ -130,6 +135,17 @@ export const contactContentSchema = z.object({
     choose: text,
     consent: text,
   }),
+  mail: z.object({
+    subject: text,
+    labels: z.object({
+      name: text,
+      email: text,
+      company: text,
+      topic: text,
+      message: text,
+    }),
+    empty: text,
+  }),
 });
 
 export const privacySchema = z.object({
@@ -145,12 +161,15 @@ export type SectionHeadingContent = z.infer<typeof sectionHeadingSchema>;
 export type Site = z.infer<typeof siteSchema>;
 export type Hero = z.infer<typeof heroSchema>;
 export type Inversion = z.infer<typeof inversionSchema>;
-export type Changelog = z.infer<typeof changelogSchema>;
-export type ChangelogEntry = Changelog["entries"][number];
+export type NewsEntry = z.infer<typeof newsEntrySchema> & {
+  id: string;
+};
+export type News = z.infer<typeof newsSchema> & { entries: NewsEntry[] };
 export type Pipeline = z.infer<typeof pipelineSchema>;
 export type PipelineStage = Pipeline["stages"][number];
-export type JobLog = z.infer<typeof jobLogSchema>;
-export type Job = JobLog["jobs"][number];
+export type Tools = z.infer<typeof toolsSchema>;
+export type Tool = Tools["entries"][number];
 export type Contact = z.infer<typeof contactContentSchema>;
 export type ContactMessages = Contact["messages"];
+export type ContactMail = Contact["mail"];
 export type Privacy = z.infer<typeof privacySchema>;

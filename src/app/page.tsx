@@ -1,14 +1,26 @@
 import { ContactShortcut } from "@/components/layout/contact-shortcut";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { site } from "@/lib/content";
+import { ContactSection } from "@/components/sections/contact/contact-section";
+import { HeroSection } from "@/components/sections/hero/hero-section";
+import { InversionSection } from "@/components/sections/inversion/inversion-section";
+import { NewsSection } from "@/components/sections/news/news-section";
+import { PipelineSection } from "@/components/sections/pipeline/pipeline-section";
+import { ToolsSection } from "@/components/sections/tools/tools-section";
+import { contact, hero, inversion, pipeline, site, tools } from "@/lib/content";
+import { getNews } from "@/lib/news";
 
 export default function Home() {
   return (
     <>
       <SiteHeader site={site} />
-      <main id="main" className="pt-14">
-        <h1 className="px-4 py-4 font-mono">{site.name}</h1>
+      <main id="main">
+        <HeroSection hero={hero} />
+        <InversionSection inversion={inversion} />
+        <NewsSection news={getNews()} />
+        <PipelineSection pipeline={pipeline} />
+        <ToolsSection tools={tools} />
+        <ContactSection contact={contact} />
       </main>
       <SiteFooter site={site} year={new Date().getFullYear()} />
       <ContactShortcut label={site.contactShortcut} />

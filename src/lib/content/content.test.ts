@@ -1,26 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { changelog as rawChangelog } from "@content/sections/changelog";
-import { jobLog as rawJobLog } from "@content/sections/job-log";
+import { news as rawNews } from "@content/sections/news";
 import { pipeline as rawPipeline } from "@content/sections/pipeline";
+import { tools as rawTools } from "@content/sections/tools";
 import { site as rawSite } from "@content/site";
 
 import {
-  changelog,
   contact,
   hero,
   inversion,
-  jobLog,
+  news,
   pipeline,
   privacy,
   site,
+  tools,
 } from "./index";
-import {
-  changelogSchema,
-  jobLogSchema,
-  pipelineSchema,
-  siteSchema,
-} from "./schema";
+import { newsSchema, pipelineSchema, siteSchema, toolsSchema } from "./schema";
 
 describe("content", () => {
   it("loads every section", () => {
@@ -28,21 +23,18 @@ describe("content", () => {
       site,
       hero,
       inversion,
-      changelog,
+      news,
       pipeline,
-      jobLog,
+      tools,
       contact,
       privacy,
     ];
     for (const section of sections) expect(section).toBeDefined();
   });
 
-  it("rejects a date that does not exist", () => {
-    const broken = {
-      ...rawChangelog,
-      entries: [{ date: "2026-02-30", kind: "added", text: "x" }],
-    };
-    expect(changelogSchema.safeParse(broken).success).toBe(false);
+  it("rejects a news section that shows no entries on the home page", () => {
+    const broken = { ...rawNews, latestCount: 0 };
+    expect(newsSchema.safeParse(broken).success).toBe(false);
   });
 
   it("rejects two pipeline stages with the same id", () => {
@@ -51,10 +43,44 @@ describe("content", () => {
     expect(pipelineSchema.safeParse(broken).success).toBe(false);
   });
 
-  it("rejects a job with negative hours", () => {
-    const job = { ...rawJobLog.jobs[0], hours: -1 };
-    const broken = { ...rawJobLog, jobs: [job] };
-    expect(jobLogSchema.safeParse(broken).success).toBe(false);
+  it("rejects two tools with the same id", () => {
+    const first = rawTools.entries[0];
+    const broken = { ...rawTools, entries: [first, first] };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a tool without tags", () => {
+    const entry = { ...rawTools.entries[0], tags: [] };
+    const broken = { ...rawTools, entries: [entry] };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a tools section without any tool", () => {
+    const broken = { ...rawTools, entries: [] };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("accepts a tool without a repository url", () => {
+    const entry = { ...rawTools.entries[0], repoUrl: undefined };
+    const ok = { ...rawTools, entries: [entry] };
+    expect(toolsSchema.safeParse(ok).success).toBe(true);
+  });
+
+  it.each([
+    "http://github.com/nokgc333/pipeinit",
+    "https://example.com/nokgc333/pipeinit",
+    "https://github.com.example.com/nokgc333/pipeinit",
+    "javascript:alert(1)",
+    "github.com/nokgc333/pipeinit",
+  ])("rejects the repository url %s", (repoUrl) => {
+    const entry = { ...rawTools.entries[0], repoUrl };
+    const broken = { ...rawTools, entries: [entry] };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a repository link label that has no place for the tool name", () => {
+    const broken = { ...rawTools, repoLinkLabel: "GitHubリポジトリ" };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
   });
 
   it("rejects a site url that is not a url", () => {

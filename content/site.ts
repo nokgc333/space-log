@@ -5,15 +5,15 @@ export const site = {
   url: "https://space-log.vercel.app",
   nav: [
     { label: "INVERSION", href: "#inversion" },
-    { label: "CHANGELOG", href: "#changelog" },
+    { label: "NEWS", href: "#news" },
     { label: "PIPELINE", href: "#pipeline" },
-    { label: "JOB LOG", href: "#job-log" },
+    { label: "TOOLS", href: "#tools" },
     { label: "CONTACT", href: "#contact" },
   ],
   menuLabel: "メニュー",
   skipLabel: "本文へ移動",
   themeLabel: "ダークモード",
-  contactShortcut: "OPEN A TICKET",
+  contactShortcut: "CONTACT",
   footer: {
     copyrightStartYear: 2026,
     privacyLabel: "プライバシーポリシー",

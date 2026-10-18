@@ -15,7 +15,7 @@ export function SiteHeader({ site }: Props) {
       >
         {site.skipLabel}
       </a>
-      <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4">
         <Logo name={site.name} />
         <nav aria-label={site.menuLabel} className="hidden md:block">
           <ul className="flex items-center gap-6">
