@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import type { ContactMessages } from "@/lib/content";
 
@@ -31,6 +32,10 @@ function messageOf(input: unknown, field: string): string | undefined {
 }
 
 describe("contact schema", () => {
+  it("tells zod not to probe for eval, which a strict content security policy reports", () => {
+    expect(z.config().jitless).toBe(true);
+  });
+
   it("accepts a complete entry with an empty optional company", () => {
     expect(schema.safeParse(VALID).success).toBe(true);
   });
