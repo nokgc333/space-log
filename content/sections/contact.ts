@@ -1,7 +1,7 @@
 export const contact = {
   heading: {
     label: "05 / CONTACT",
-    title: "OPEN A TICKET",
+    title: "CONTACT",
     subtitle: "ご相談",
     lead: "工程の「詰まり」から、ご相談ください。",
   },
@@ -37,5 +37,16 @@ export const contact = {
     singleLine: "改行などの特殊な文字は使えません",
     choose: "選択してください",
     consent: "同意が必要です",
+  },
+  mail: {
+    subject: "お問い合わせフォームからの送信",
+    labels: {
+      name: "お名前",
+      email: "メールアドレス",
+      company: "会社名",
+      topic: "ご相談の種類",
+      message: "内容",
+    },
+    empty: "-",
   },
 };

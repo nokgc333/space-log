@@ -135,6 +135,17 @@ export const contactContentSchema = z.object({
     choose: text,
     consent: text,
   }),
+  mail: z.object({
+    subject: text,
+    labels: z.object({
+      name: text,
+      email: text,
+      company: text,
+      topic: text,
+      message: text,
+    }),
+    empty: text,
+  }),
 });
 
 export const privacySchema = z.object({
@@ -160,4 +171,5 @@ export type Tools = z.infer<typeof toolsSchema>;
 export type Tool = Tools["entries"][number];
 export type Contact = z.infer<typeof contactContentSchema>;
 export type ContactMessages = Contact["messages"];
+export type ContactMail = Contact["mail"];
 export type Privacy = z.infer<typeof privacySchema>;

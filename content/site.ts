@@ -13,7 +13,7 @@ export const site = {
   menuLabel: "メニュー",
   skipLabel: "本文へ移動",
   themeLabel: "ダークモード",
-  contactShortcut: "OPEN A TICKET",
+  contactShortcut: "CONTACT",
   footer: {
     copyrightStartYear: 2026,
     privacyLabel: "プライバシーポリシー",
