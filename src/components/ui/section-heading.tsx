@@ -14,7 +14,7 @@ export function SectionHeading({ id, heading, as: Title = "h2" }: Props) {
       </p>
       <Title
         id={id}
-        className="mt-3 font-display text-4xl font-bold tracking-tight text-ink uppercase md:text-5xl"
+        className="mt-3 font-display text-4xl font-bold tracking-tight whitespace-pre-line text-ink uppercase md:text-5xl"
       >
         {heading.title}
       </Title>

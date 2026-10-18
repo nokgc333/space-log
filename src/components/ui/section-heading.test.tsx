@@ -39,6 +39,14 @@ describe("SectionHeading", () => {
     expect(lead).toHaveClass("whitespace-pre-line");
   });
 
+  it("shows a line break written in the title as a line break", () => {
+    const heading = { ...HEADING, title: "FROM NODE\nTO SHOT" };
+    render(<SectionHeading id="x-heading" heading={heading} />);
+    const title = screen.getByRole("heading", { level: 2 });
+    expect(title.textContent).toBe("FROM NODE\nTO SHOT");
+    expect(title).toHaveClass("whitespace-pre-line");
+  });
+
   it("omits the lead when there is none", () => {
     const heading = { label: "L", title: "T", subtitle: "S" };
     render(<SectionHeading id="x-heading" heading={heading} />);
