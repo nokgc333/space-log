@@ -1,6 +1,7 @@
 import { expect, test, type Locator } from "@playwright/test";
 
 import { pipeline } from "@content/sections/pipeline";
+import { tools } from "@content/sections/tools";
 import { site } from "@content/site";
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -124,3 +125,109 @@ for (const width of [1440, 375]) {
     ).toBeLessThanOrEqual(1);
   });
 }
+
+for (const width of [1440, 375]) {
+  test(`the TOOLS rows keep one height on every page at ${width} px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const section = page.locator("#tools");
+    const rows = section.locator("tbody tr");
+    const next = section.getByRole("button", { name: tools.pager.next });
+    const previous = section.getByRole("button", { name: tools.pager.prev });
+    await rows.first().scrollIntoViewIfNeeded();
+
+    const heightsOnThisPage = async () => {
+      const heights: number[] = [];
+      for (let index = 0; index < (await rows.count()); index += 1) {
+        heights.push(Math.round((await boxOf(rows.nth(index))).height));
+      }
+      return heights;
+    };
+    const looseCells = () =>
+      section.locator("tbody tr:not([aria-hidden]) td > div").evaluateAll(
+        (cells) =>
+          cells.filter((cell) => {
+            const style = getComputedStyle(cell);
+            const lineHeight = parseFloat(style.lineHeight);
+            return (
+              style.webkitLineClamp !== "2" ||
+              Math.abs(cell.clientHeight - 2 * lineHeight) > 1
+            );
+          }).length,
+      );
+    const fillerLines = () =>
+      section
+        .locator("tbody tr[aria-hidden]")
+        .evaluateAll(
+          (rows) =>
+            rows.filter(
+              (row) =>
+                getComputedStyle(row).borderBottomColor !== "rgba(0, 0, 0, 0)",
+            ).length,
+        );
+
+    const firstRow = await boxOf(rows.first());
+    const firstName = await boxOf(rows.first().getByRole("button"));
+    expect(
+      Math.abs(
+        firstName.y + firstName.height / 2 - (firstRow.y + firstRow.height / 2),
+      ),
+    ).toBeLessThanOrEqual(2);
+
+    const firstPage = await heightsOnThisPage();
+    expect(new Set(firstPage).size).toBe(1);
+    expect(await looseCells()).toBe(0);
+    const firstTableHeight = (await boxOf(section.locator("table"))).height;
+    const addressBefore = page.url();
+
+    await next.click();
+    const secondPage = await heightsOnThisPage();
+    expect(secondPage).toEqual(firstPage);
+    expect(await looseCells()).toBe(0);
+    expect(await fillerLines()).toBe(0);
+    expect((await boxOf(section.locator("table"))).height).toBe(
+      firstTableHeight,
+    );
+    expect(page.url()).toBe(addressBefore);
+
+    await previous.click();
+    expect(await heightsOnThisPage()).toEqual(firstPage);
+  });
+}
+
+test("the GitHub icon in front of a tool opens its repository in a new tab", async ({
+  page,
+  context,
+}) => {
+  await context.route("https://github.com/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<title>stub</title>",
+    }),
+  );
+  await page.goto("/");
+  const section = page.locator("#tools");
+  const entry = tools.entries[0];
+  if (!entry.repoUrl) throw new Error("the first tool needs a repository url");
+  const link = section.getByRole("link", {
+    name: tools.repoLinkLabel.replace("{name}", entry.name),
+  });
+  await link.scrollIntoViewIfNeeded();
+
+  const icon = await boxOf(link);
+  const name = await boxOf(section.getByRole("button", { name: entry.name }));
+  expect(icon.x + icon.width).toBeLessThanOrEqual(name.x);
+  expect(icon.width).toBeGreaterThanOrEqual(32);
+  expect(icon.height).toBeGreaterThanOrEqual(32);
+
+  const addressBefore = page.url();
+  const newTab = context.waitForEvent("page");
+  await link.click();
+  const opened = await newTab;
+  await opened.waitForLoadState();
+  expect(opened.url()).toBe(entry.repoUrl);
+  expect(page.url()).toBe(addressBefore);
+});

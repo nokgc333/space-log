@@ -5,7 +5,8 @@ import { HeroSection } from "@/components/sections/hero/hero-section";
 import { InversionSection } from "@/components/sections/inversion/inversion-section";
 import { NewsSection } from "@/components/sections/news/news-section";
 import { PipelineSection } from "@/components/sections/pipeline/pipeline-section";
-import { hero, inversion, pipeline, site } from "@/lib/content";
+import { ToolsSection } from "@/components/sections/tools/tools-section";
+import { hero, inversion, pipeline, site, tools } from "@/lib/content";
 import { getNews } from "@/lib/news";
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
         <InversionSection inversion={inversion} />
         <NewsSection news={getNews()} />
         <PipelineSection pipeline={pipeline} />
+        <ToolsSection tools={tools} />
       </main>
       <SiteFooter site={site} year={new Date().getFullYear()} />
       <ContactShortcut label={site.contactShortcut} />

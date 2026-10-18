@@ -7,7 +7,7 @@ export const site = {
     { label: "INVERSION", href: "#inversion" },
     { label: "NEWS", href: "#news" },
     { label: "PIPELINE", href: "#pipeline" },
-    { label: "JOB LOG", href: "#job-log" },
+    { label: "TOOLS", href: "#tools" },
     { label: "CONTACT", href: "#contact" },
   ],
   menuLabel: "メニュー",
