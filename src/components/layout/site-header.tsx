@@ -4,9 +4,14 @@ import { Logo } from "../ui/logo";
 import { ThemeToggle } from "../ui/theme-toggle";
 import { MobileNav } from "./mobile-nav";
 
-type Props = { site: Site };
+type Props = { site: Site; navBase?: string };
 
-export function SiteHeader({ site }: Props) {
+export function SiteHeader({ site, navBase = "" }: Props) {
+  const navItems = site.nav.map((item) => ({
+    ...item,
+    href: `${navBase}${item.href}`,
+  }));
+
   return (
     <header className="fixed inset-x-0 top-0 z-40 h-14 border-b border-rule bg-surface">
       <a
@@ -19,7 +24,7 @@ export function SiteHeader({ site }: Props) {
         <Logo name={site.name} />
         <nav aria-label={site.menuLabel} className="hidden md:block">
           <ul className="flex items-center gap-6">
-            {site.nav.map((item) => (
+            {navItems.map((item) => (
               <li key={item.href}>
                 <a
                   href={item.href}
@@ -33,7 +38,7 @@ export function SiteHeader({ site }: Props) {
         </nav>
         <div className="flex items-center gap-2">
           <ThemeToggle label={site.themeLabel} />
-          <MobileNav label={site.menuLabel} items={site.nav} />
+          <MobileNav label={site.menuLabel} items={navItems} />
         </div>
       </div>
     </header>
