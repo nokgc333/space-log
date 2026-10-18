@@ -1,5 +1,5 @@
 import { Color, Matrix4, PerspectiveCamera, Vector3 } from "three";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { stepParticles } from "../particle-physics";
 import {
   createNetworkState,
@@ -24,6 +24,7 @@ const view = {
   worldHeight: 5.8,
   matrix: matrix.elements,
 };
+const UP = new Vector3(0, 1, 0);
 const idle = () => ({
   x: 0,
   y: 0,
@@ -108,15 +109,12 @@ describe("stepNetworkFrame", () => {
     let idleWasActive = false;
     for (let frame = 0; frame < 720; frame++) {
       if (frame === 300) {
-        const p = new Vector3(...n.buffers.positions.slice(0, 3))
-          .applyAxisAngle(new Vector3(0, 1, 0), n.rotation)
-          .project(camera);
         Object.assign(input, {
-          x: p.x,
-          y: p.y,
+          x: 0,
+          y: 0,
           inside: true,
-          clickX: p.x,
-          clickY: p.y,
+          clickX: 0,
+          clickY: 0,
           pendingClick: true,
         });
       }
@@ -223,4 +221,29 @@ describe("pointer push while the cloud keeps turning", () => {
       expect(near).toBeGreaterThan(far * 5);
     },
   );
+
+  it("hits a particle when the center of the view is clicked, wherever the first particle starts", () => {
+    const aboveTheTop = [0.25, 0.5, 1];
+    const realRandom = Math.random.bind(Math);
+    let calls = 0;
+    const spy = vi
+      .spyOn(Math, "random")
+      .mockImplementation(() =>
+        calls < aboveTheTop.length ? aboveTheTop[calls++] : realRandom(),
+      );
+    const n = createNetworkState(false);
+    spy.mockRestore();
+    const first = new Vector3(...n.buffers.positions.slice(0, 3))
+      .applyAxisAngle(UP, n.rotation)
+      .project(camera);
+    expect(Math.abs(first.y)).toBeGreaterThan(1);
+
+    const input = {
+      ...idle(),
+      inside: true,
+      pendingClick: true,
+    };
+    stepNetworkFrame(n, input, true, "always", view, 1 / 60);
+    expect(n.activity.hops.some((hop) => hop === 0)).toBe(true);
+  });
 });
