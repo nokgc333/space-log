@@ -5,7 +5,7 @@ export const site = {
   url: "https://space-log.vercel.app",
   nav: [
     { label: "INVERSION", href: "#inversion" },
-    { label: "CHANGELOG", href: "#changelog" },
+    { label: "NEWS", href: "#news" },
     { label: "PIPELINE", href: "#pipeline" },
     { label: "JOB LOG", href: "#job-log" },
     { label: "CONTACT", href: "#contact" },

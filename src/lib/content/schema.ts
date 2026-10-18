@@ -41,18 +41,16 @@ export const inversionSchema = z.object({
   body: z.array(text).min(1),
 });
 
-export const changelogSchema = z.object({
+export const newsSchema = z.object({
   heading: sectionHeadingSchema,
-  kindLabels: z.object({ added: text, changed: text, fixed: text }),
-  entries: z
-    .array(
-      z.object({
-        date: z.iso.date(),
-        kind: z.enum(["added", "changed", "fixed"]),
-        text,
-      }),
-    )
-    .min(1),
+  kindLabels: z.object({ added: text, updated: text, fixed: text }),
+  latestCount: z.number().int().positive(),
+});
+
+export const newsEntrySchema = z.object({
+  date: z.iso.date(),
+  kind: z.enum(["added", "updated", "fixed"]),
+  text,
 });
 
 export const pipelineSchema = z.object({
@@ -145,8 +143,10 @@ export type SectionHeadingContent = z.infer<typeof sectionHeadingSchema>;
 export type Site = z.infer<typeof siteSchema>;
 export type Hero = z.infer<typeof heroSchema>;
 export type Inversion = z.infer<typeof inversionSchema>;
-export type Changelog = z.infer<typeof changelogSchema>;
-export type ChangelogEntry = Changelog["entries"][number];
+export type NewsEntry = z.infer<typeof newsEntrySchema> & {
+  id: string;
+};
+export type News = z.infer<typeof newsSchema> & { entries: NewsEntry[] };
 export type Pipeline = z.infer<typeof pipelineSchema>;
 export type PipelineStage = Pipeline["stages"][number];
 export type JobLog = z.infer<typeof jobLogSchema>;

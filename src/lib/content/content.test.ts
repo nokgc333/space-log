@@ -1,26 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { changelog as rawChangelog } from "@content/sections/changelog";
 import { jobLog as rawJobLog } from "@content/sections/job-log";
+import { news as rawNews } from "@content/sections/news";
 import { pipeline as rawPipeline } from "@content/sections/pipeline";
 import { site as rawSite } from "@content/site";
 
 import {
-  changelog,
   contact,
   hero,
   inversion,
   jobLog,
+  news,
   pipeline,
   privacy,
   site,
 } from "./index";
-import {
-  changelogSchema,
-  jobLogSchema,
-  pipelineSchema,
-  siteSchema,
-} from "./schema";
+import { jobLogSchema, newsSchema, pipelineSchema, siteSchema } from "./schema";
 
 describe("content", () => {
   it("loads every section", () => {
@@ -28,7 +23,7 @@ describe("content", () => {
       site,
       hero,
       inversion,
-      changelog,
+      news,
       pipeline,
       jobLog,
       contact,
@@ -37,12 +32,9 @@ describe("content", () => {
     for (const section of sections) expect(section).toBeDefined();
   });
 
-  it("rejects a date that does not exist", () => {
-    const broken = {
-      ...rawChangelog,
-      entries: [{ date: "2026-02-30", kind: "added", text: "x" }],
-    };
-    expect(changelogSchema.safeParse(broken).success).toBe(false);
+  it("rejects a news section that shows no entries on the home page", () => {
+    const broken = { ...rawNews, latestCount: 0 };
+    expect(newsSchema.safeParse(broken).success).toBe(false);
   });
 
   it("rejects two pipeline stages with the same id", () => {
