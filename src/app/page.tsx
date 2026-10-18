@@ -4,7 +4,8 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { HeroSection } from "@/components/sections/hero/hero-section";
 import { InversionSection } from "@/components/sections/inversion/inversion-section";
 import { NewsSection } from "@/components/sections/news/news-section";
-import { hero, inversion, site } from "@/lib/content";
+import { PipelineSection } from "@/components/sections/pipeline/pipeline-section";
+import { hero, inversion, pipeline, site } from "@/lib/content";
 import { getNews } from "@/lib/news";
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
         <HeroSection hero={hero} />
         <InversionSection inversion={inversion} />
         <NewsSection news={getNews()} />
+        <PipelineSection pipeline={pipeline} />
       </main>
       <SiteFooter site={site} year={new Date().getFullYear()} />
       <ContactShortcut label={site.contactShortcut} />
