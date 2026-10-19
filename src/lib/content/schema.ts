@@ -53,7 +53,8 @@ export const inversionSchema = z.object({
 export const newsSchema = z.object({
   heading: sectionHeadingSchema,
   kindLabels: z.object({ added: text, updated: text, fixed: text }),
-  latestCount: z.number().int().positive(),
+  perPage: z.number().int().positive(),
+  pager: z.object({ prev: text, next: text }),
 });
 
 export const newsEntrySchema = z.object({

@@ -6,6 +6,6 @@ import { loadNewsEntries } from "./load-news-entries";
 export function getNews(): News {
   return {
     ...news,
-    entries: loadNewsEntries().slice(0, news.latestCount),
+    entries: loadNewsEntries(),
   };
 }

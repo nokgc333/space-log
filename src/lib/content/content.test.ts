@@ -39,8 +39,18 @@ describe("content", () => {
     for (const section of sections) expect(section).toBeDefined();
   });
 
-  it("rejects a news section that shows no entries on the home page", () => {
-    const broken = { ...rawNews, latestCount: 0 };
+  it("rejects a news section that shows no entries per page", () => {
+    const broken = { ...rawNews, perPage: 0 };
+    expect(newsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a news section with a page size that is not a whole number", () => {
+    const broken = { ...rawNews, perPage: 2.5 };
+    expect(newsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a news section without labels for the pager buttons", () => {
+    const broken = { ...rawNews, pager: undefined };
     expect(newsSchema.safeParse(broken).success).toBe(false);
   });
 

@@ -6,5 +6,6 @@ export const news = {
     lead: "スタジオの変更を、「ログ」として残しています。",
   },
   kindLabels: { added: "ADDED", updated: "UPDATED", fixed: "FIXED" },
-  latestCount: 5,
+  perPage: 5,
+  pager: { prev: "前のお知らせ", next: "次のお知らせ" },
 };
