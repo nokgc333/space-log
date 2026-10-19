@@ -31,6 +31,7 @@ export const tools = {
     {
       id: "frame-slicer",
       name: "frame-slicer",
+      repoUrl: "https://github.com/nokgc333/frame-slicer",
       tags: ["Python", "CLI"],
       summary: "フレーム範囲の分割と、キューへの投入。",
       detail:

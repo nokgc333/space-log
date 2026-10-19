@@ -1,6 +1,10 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { hero } from "@content/sections/hero";
+import { news } from "@content/sections/news";
 import { pipeline } from "@content/sections/pipeline";
 import { tools } from "@content/sections/tools";
 import { site } from "@content/site";
@@ -474,4 +478,55 @@ test("a tool's detail opens and closes with the keyboard, and the pager moves on
   await page.keyboard.press("Enter");
   await expect(next).toBeDisabled();
   await expect(previous).toBeEnabled();
+});
+
+const NEWS_FOLDER = path.join(process.cwd(), "content", "news");
+const DESKTOP_VIEWPORT = { width: 1440, height: 900 };
+
+test("the news list pages through every entry with the keyboard", async ({
+  page,
+}) => {
+  const total = fs
+    .readdirSync(NEWS_FOLDER)
+    .filter((file) => file.endsWith(".md")).length;
+  const pageCount = Math.ceil(total / news.perPage);
+
+  await page.setViewportSize(DESKTOP_VIEWPORT);
+  await page.goto("/");
+  const section = page.locator("#news");
+  const items = section.getByRole("listitem");
+  const next = section.getByRole("button", { name: news.pager.next });
+  const previous = section.getByRole("button", { name: news.pager.prev });
+
+  if (pageCount === 1) {
+    await expect(items).toHaveCount(total);
+    await expect(next).toHaveCount(0);
+    await expect(previous).toHaveCount(0);
+    return;
+  }
+
+  const listHeight = () =>
+    section
+      .locator("ol")
+      .evaluate((list) => list.getBoundingClientRect().height);
+
+  await expect(items).toHaveCount(news.perPage);
+  await expect(section.getByText(`1 / ${pageCount}`)).toBeVisible();
+  await expect(previous).toBeDisabled();
+  const firstPageTexts = await items.allTextContents();
+  const firstPageHeight = await listHeight();
+
+  await next.focus();
+  await page.keyboard.press("Enter");
+  await expect(section.getByText(`2 / ${pageCount}`)).toBeVisible();
+  await expect(items).toHaveCount(Math.min(news.perPage, total - news.perPage));
+  const secondPageTexts = await items.allTextContents();
+  for (const text of secondPageTexts)
+    expect(firstPageTexts).not.toContain(text);
+  expect(await listHeight()).toBeCloseTo(firstPageHeight, 0);
+
+  await previous.focus();
+  await page.keyboard.press("Enter");
+  await expect(section.getByText(`1 / ${pageCount}`)).toBeVisible();
+  expect(await items.allTextContents()).toEqual(firstPageTexts);
 });
