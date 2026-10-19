@@ -4,7 +4,9 @@ import { Fragment, useState } from "react";
 
 import { SectionFrame } from "@/components/ui/section-frame";
 import { GitHubMark } from "@/components/ui/github-mark";
+import { Pager } from "@/components/ui/pager";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { usePagination } from "@/components/ui/use-pagination";
 import type { Tools } from "@/lib/content";
 
 export const TOOLS_PER_PAGE = 5;
@@ -14,19 +16,18 @@ const TAGS_CELL_CLASS = "h-11 line-clamp-2 text-xs leading-[1.375rem]";
 const FILLER_CELL_CLASS = "h-11";
 
 export function ToolsSection({ tools }: { tools: Tools }) {
-  const [page, setPage] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
   const { columns, toggleLabels, pager, repoLinkLabel } = tools;
+  const {
+    page,
+    pageCount,
+    items: visible,
+    fillerCount,
+    goTo,
+  } = usePagination(tools.entries, TOOLS_PER_PAGE);
 
-  const pageCount = Math.ceil(tools.entries.length / TOOLS_PER_PAGE);
-  const visible = tools.entries.slice(
-    page * TOOLS_PER_PAGE,
-    (page + 1) * TOOLS_PER_PAGE,
-  );
-  const fillerCount = pageCount > 1 ? TOOLS_PER_PAGE - visible.length : 0;
-
-  const goTo = (nextPage: number) => {
-    setPage(nextPage);
+  const changePage = (nextPage: number) => {
+    goTo(nextPage);
     setOpenId(null);
   };
 
@@ -141,31 +142,12 @@ export function ToolsSection({ tools }: { tools: Tools }) {
           </table>
         </div>
 
-        {pageCount > 1 ? (
-          <div className="mt-4 flex items-center justify-end gap-3 font-mono text-xs text-muted">
-            <button
-              type="button"
-              aria-label={pager.prev}
-              disabled={page === 0}
-              onClick={() => goTo(page - 1)}
-              className="px-2 py-1 enabled:hover:text-ink disabled:opacity-30"
-            >
-              ◀
-            </button>
-            <span aria-live="polite" className="tabular-nums">
-              {`${page + 1} / ${pageCount}`}
-            </span>
-            <button
-              type="button"
-              aria-label={pager.next}
-              disabled={page === pageCount - 1}
-              onClick={() => goTo(page + 1)}
-              className="px-2 py-1 enabled:hover:text-ink disabled:opacity-30"
-            >
-              ▶
-            </button>
-          </div>
-        ) : null}
+        <Pager
+          page={page}
+          pageCount={pageCount}
+          labels={pager}
+          onChange={changePage}
+        />
       </div>
     </SectionFrame>
   );
