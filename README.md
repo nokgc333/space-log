@@ -103,6 +103,12 @@ Measured on a production build in Chrome on an Apple M2 (1440×900):
 - `npm audit --omit=dev` reports no vulnerabilities in the production dependencies.
 - The site sets no cookies and stores only the chosen theme in the browser.
 
+## Credits
+
+The GitHub mark in the tools table is the `mark-github` icon (16 px) from [Octicons](https://github.com/primer/octicons) 19.39.0, MIT License, Copyright (c) 2026 GitHub Inc.
+It is used unmodified, in a single color, as a link to a repository.
+The GitHub name and logo are trademarks of GitHub, Inc.
+
 ## License
 
 MIT
