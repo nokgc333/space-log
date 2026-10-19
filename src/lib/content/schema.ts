@@ -53,7 +53,8 @@ export const inversionSchema = z.object({
 export const newsSchema = z.object({
   heading: sectionHeadingSchema,
   kindLabels: z.object({ added: text, updated: text, fixed: text }),
-  latestCount: z.number().int().positive(),
+  perPage: z.number().int().positive(),
+  pager: z.object({ prev: text, next: text }),
 });
 
 export const newsEntrySchema = z.object({
@@ -148,11 +149,35 @@ export const contactContentSchema = z.object({
   }),
 });
 
+export type PrivacyListItem = { text: string; children?: PrivacyListItem[] };
+
+const privacyListItemSchema: z.ZodType<PrivacyListItem> = z.lazy(() =>
+  z.object({
+    text,
+    children: z.array(privacyListItemSchema).min(1).optional(),
+  }),
+);
+
+const privacyBlockSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("paragraph"), text }),
+  z.object({
+    kind: z.literal("list"),
+    style: z.enum(["number", "bullet"]),
+    items: z.array(privacyListItemSchema).min(1),
+  }),
+]);
+
 export const privacySchema = z.object({
   title: text,
   updated: z.iso.date(),
+  lead: text,
   sections: z
-    .array(z.object({ heading: text, body: z.array(text).min(1) }))
+    .array(
+      z.object({
+        heading: text,
+        blocks: z.array(privacyBlockSchema).min(1),
+      }),
+    )
     .min(1),
   backLabel: text,
 });
@@ -173,3 +198,5 @@ export type Contact = z.infer<typeof contactContentSchema>;
 export type ContactMessages = Contact["messages"];
 export type ContactMail = Contact["mail"];
 export type Privacy = z.infer<typeof privacySchema>;
+export type PrivacySection = Privacy["sections"][number];
+export type PrivacyBlock = PrivacySection["blocks"][number];

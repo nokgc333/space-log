@@ -31,10 +31,11 @@ export const tools = {
     {
       id: "frame-slicer",
       name: "frame-slicer",
+      repoUrl: "https://github.com/nokgc333/frame-slicer",
       tags: ["Python", "CLI"],
       summary: "フレーム範囲の分割と、キューへの投入。",
       detail:
-        "キャッシュの書き出しなど、フレーム同士が独立した処理を、指定した数に等分します。シミュレーション本体は、前のフレームに依存するため、分けません。",
+        "キャッシュの書き出しなど、フレーム同士が独立した処理を、指定した数に等分します。シミュレーション本体は、前のフレームに依存するため、分けません。分けたものは、QueueWatchへそのまま投入できます。",
     },
     {
       id: "queuewatch",

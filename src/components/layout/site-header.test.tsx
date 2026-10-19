@@ -6,10 +6,10 @@ import { site } from "@/lib/content";
 
 import { SiteHeader } from "./site-header";
 
-function renderHeader() {
+function renderHeader(navBase?: string) {
   return render(
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <SiteHeader site={site} />
+      <SiteHeader site={site} navBase={navBase} />
     </ThemeProvider>,
   );
 }
@@ -37,5 +37,31 @@ describe("SiteHeader", () => {
     expect(
       screen.getByRole("button", { name: site.themeLabel }),
     ).toBeInTheDocument();
+  });
+
+  describe("on a page other than the home page", () => {
+    it("points every nav item at the section on the home page, in both menus", () => {
+      renderHeader("/");
+      for (const item of site.nav) {
+        const links = screen.getAllByRole("link", {
+          name: item.label,
+          hidden: true,
+        });
+        expect(links).toHaveLength(2);
+        for (const link of links) {
+          expect(link).toHaveAttribute("href", `/${item.href}`);
+        }
+      }
+    });
+
+    it("keeps the skip link on the page itself and the logo on the home page", () => {
+      renderHeader("/");
+      const [first] = screen.getAllByRole("link");
+      expect(first).toHaveAttribute("href", "#main");
+      expect(screen.getByRole("link", { name: site.name })).toHaveAttribute(
+        "href",
+        "/",
+      );
+    });
   });
 });

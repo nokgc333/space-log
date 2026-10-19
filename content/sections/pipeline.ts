@@ -42,7 +42,7 @@ export const pipeline = {
       tool: "frame-slicer",
       role: "フレーム範囲の分割と、キューへの投入",
       detail:
-        "キャッシュの書き出しなど、フレーム同士が独立した処理を、フレーム範囲で指定した数に分けます。キューへ投入するコマンドを出します。",
+        "キャッシュの書き出しなど、フレーム同士が独立した処理を、フレーム範囲で指定した数に分けます。QueueWatchへ、そのまま投入することもできます。",
       terminal: [
         "$ frame-slicer split 1001-1240 --slices 8",
         "slice 1/8  1001-1030  (30 frames)",

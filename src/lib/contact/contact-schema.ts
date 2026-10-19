@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import type { ContactMessages } from "@/lib/content";
 
+z.config({ jitless: true });
+
 const MAX_SHORT_TEXT = 100;
 const MAX_LONG_TEXT = 2000;
 const MAX_TRAP_TEXT = 200;
