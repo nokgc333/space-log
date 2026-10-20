@@ -29,11 +29,10 @@ export const pipeline = {
       detail:
         "Houdiniのシーンを書き出す前に、非多様体・N-gon・ゼロ面積、未接続のノード、命名違反を検査します。結果は CSV と JSON で出力します。",
       terminal: [
-        "$ hython scene_doctor_cli.py --hip SH040.hip --format both",
-        "checking geometry, nodes and names",
-        "  ✗ non-manifold edges: 2",
-        "  ✗ unconnected nodes: 1",
-        "report written (csv, json)",
+        "$ hython scene_doctor_cli.py --hip tornado_00.hiplc --format both",
+        "1 violation(s) found.",
+        "$ echo $?",
+        "1",
       ],
     },
     {
@@ -72,7 +71,7 @@ export const pipeline = {
       tool: "unibridge",
       role: "DCC間の受け渡しの整合検査",
       detail:
-        "HoudiniとBlenderの間で受け渡すUSDを検査し、座標系（up軸）・スケール単位・命名の食い違いを見つけます。検出とレポート（HTML・CSV・JSON）に徹し、自動修正はしません。",
+        "HoudiniとBlenderの間で受け渡すUSDを検査し、座標系（up軸）・スケール単位・命名の食い違いを見つけます。検出とレポート（HTML・CSV・JSON）が中心で、変換は、指定したときだけ行います。",
       terminal: [
         "$ python cli.py scale-check --source houdini.usda --target blender.usda",
         "[error] scale_mismatch: metersPerUnit mismatch: source=1.0, target=0.01 (100x)",
