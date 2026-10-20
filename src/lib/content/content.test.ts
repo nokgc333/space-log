@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { privacy as rawPrivacy } from "@content/privacy";
+import { contact as rawContact } from "@content/sections/contact";
 import { news as rawNews } from "@content/sections/news";
 import { pipeline as rawPipeline } from "@content/sections/pipeline";
 import { tools as rawTools } from "@content/sections/tools";
@@ -17,6 +18,7 @@ import {
   tools,
 } from "./index";
 import {
+  contactContentSchema,
   newsSchema,
   pipelineSchema,
   privacySchema,
@@ -224,5 +226,30 @@ describe("content", () => {
           .success,
       ).toBe(false);
     });
+  });
+
+  it("rejects a consent sentence that does not contain the text to link", () => {
+    const broken = {
+      ...rawContact,
+      consentLink: { ...rawContact.consentLink, text: "not in the sentence" },
+    };
+    expect(contactContentSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a contact section without the consent link", () => {
+    const broken = { ...rawContact, consentLink: undefined };
+    expect(contactContentSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a consent link without the note for the new tab", () => {
+    const broken = {
+      ...rawContact,
+      consentLink: { ...rawContact.consentLink, note: "" },
+    };
+    expect(contactContentSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("links a part of the real consent sentence", () => {
+    expect(contact.fields.consent).toContain(contact.consentLink.text);
   });
 });

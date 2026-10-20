@@ -108,46 +108,52 @@ export const toolsSchema = z.object({
     .refine(hasUniqueIds, "duplicate tool id"),
 });
 
-export const contactContentSchema = z.object({
-  heading: sectionHeadingSchema,
-  fields: z.object({
-    name: text,
-    email: text,
-    company: text,
-    topic: text,
-    message: text,
-    consent: text,
-  }),
-  optionalMark: text,
-  topics: z.array(z.object({ value: text, label: text })).min(1),
-  submit: text,
-  sending: text,
-  results: z.object({
-    sent: text,
-    demo: text,
-    rateLimited: text,
-    failed: text,
-  }),
-  messages: z.object({
-    required: text,
-    tooLong: text,
-    email: text,
-    singleLine: text,
-    choose: text,
-    consent: text,
-  }),
-  mail: z.object({
-    subject: text,
-    labels: z.object({
+export const contactContentSchema = z
+  .object({
+    heading: sectionHeadingSchema,
+    fields: z.object({
       name: text,
       email: text,
       company: text,
       topic: text,
       message: text,
+      consent: text,
     }),
-    empty: text,
-  }),
-});
+    consentLink: z.object({ text, note: text }),
+    optionalMark: text,
+    topics: z.array(z.object({ value: text, label: text })).min(1),
+    submit: text,
+    sending: text,
+    results: z.object({
+      sent: text,
+      demo: text,
+      rateLimited: text,
+      failed: text,
+    }),
+    messages: z.object({
+      required: text,
+      tooLong: text,
+      email: text,
+      singleLine: text,
+      choose: text,
+      consent: text,
+    }),
+    mail: z.object({
+      subject: text,
+      labels: z.object({
+        name: text,
+        email: text,
+        company: text,
+        topic: text,
+        message: text,
+      }),
+      empty: text,
+    }),
+  })
+  .refine(
+    (value) => value.fields.consent.includes(value.consentLink.text),
+    "the consent sentence must contain the text to link",
+  );
 
 export type PrivacyListItem = { text: string; children?: PrivacyListItem[] };
 

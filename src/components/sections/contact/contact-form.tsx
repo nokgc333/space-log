@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import type { SubmitContactResult } from "@/app/actions/submit-contact";
@@ -10,6 +10,9 @@ import {
 } from "@/lib/contact/contact-schema";
 import { schemaResolver } from "@/lib/contact/schema-resolver";
 import type { Contact } from "@/lib/content";
+import { PRIVACY_PATH } from "@/lib/routes";
+
+import { ConsentText } from "./consent-text";
 
 type Props = {
   contact: Contact;
@@ -31,6 +34,7 @@ const INPUT =
   "mt-2 w-full border border-control bg-surface px-3 py-2 outline-none focus:border-ink";
 
 export function ContactForm({ contact, submit }: Props) {
+  const consentNoteId = useId();
   const [outcome, setOutcome] = useState<Outcome>(null);
   const schema = buildContactSchema(
     contact.messages,
@@ -182,8 +186,18 @@ export function ContactForm({ contact, submit }: Props) {
             {...a11y("consent")}
             {...register("consent")}
           />
-          {contact.fields.consent}
+          <span>
+            <ConsentText
+              text={contact.fields.consent}
+              linkText={contact.consentLink.text}
+              href={PRIVACY_PATH}
+              describedBy={consentNoteId}
+            />
+          </span>
         </label>
+        <span id={consentNoteId} hidden>
+          {contact.consentLink.note}
+        </span>
         {fieldError("consent")}
       </div>
       <button

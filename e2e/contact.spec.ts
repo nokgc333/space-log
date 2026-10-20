@@ -16,6 +16,11 @@ async function fillValid(page: Page) {
   await field(page, "consent").check();
 }
 
+const consentLink = (page: Page) =>
+  page
+    .locator("#contact")
+    .getByRole("link", { name: contact.consentLink.text });
+
 const outcome = (page: Page, role: "status" | "alert") =>
   page.locator("#contact").getByRole(role);
 
@@ -70,7 +75,7 @@ test.describe("the contact form", () => {
     expect(posts.value).toBe(0);
   });
 
-  test("can be sent with the keyboard alone, from the last field to the button", async ({
+  test("can be sent with the keyboard alone, from the last field through the privacy link to the button", async ({
     page,
   }) => {
     await page.goto("/#contact");
@@ -81,6 +86,8 @@ test.describe("the contact form", () => {
     await expect(field(page, "consent")).toBeFocused();
     await page.keyboard.press("Space");
     await expect(field(page, "consent")).toBeChecked();
+    await page.keyboard.press("Tab");
+    await expect(consentLink(page)).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(
       page.getByRole("button", { name: contact.submit }),
@@ -212,4 +219,84 @@ test("the button at the bottom right leads to the contact section", async ({
   await page.getByRole("link", { name: site.contactShortcut }).last().click();
   await expect(page).toHaveURL(/#contact$/);
   await expect(page.locator("#contact")).toBeInViewport();
+});
+
+test("the privacy policy in the consent line opens in a new tab and keeps the form as it is", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/");
+  const link = consentLink(page);
+  await expect(link).toHaveAttribute("href", "/privacy");
+  await expect(link).toHaveAttribute("target", "_blank");
+  await field(page, "name").fill("山田 太郎");
+
+  const [policy] = await Promise.all([
+    context.waitForEvent("page"),
+    link.click(),
+  ]);
+  await policy.waitForLoadState();
+
+  await expect(policy).toHaveURL(/\/privacy$/);
+  await expect(policy.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(field(page, "name")).toHaveValue("山田 太郎");
+  await expect(field(page, "consent")).not.toBeChecked();
+});
+
+for (const theme of ["light", "dark"] as const) {
+  test(`the consent link is a readable blue and underlined in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await page.addInitScript((value) => {
+      localStorage.setItem("theme", value);
+    }, theme);
+    await page.goto("/");
+
+    const style = await consentLink(page).evaluate((element) => {
+      const computed = getComputedStyle(element);
+      return {
+        color: computed.color,
+        line: computed.textDecorationLine,
+        background: getComputedStyle(document.body).backgroundColor,
+      };
+    });
+
+    const channels = (rgb: string) =>
+      (rgb.match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map(Number);
+    const luminance = ([r, g, b]: number[]) => {
+      const part = (value: number) => {
+        const c = value / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * part(r) + 0.7152 * part(g) + 0.0722 * part(b);
+    };
+
+    const [r, g, b] = channels(style.color);
+    expect(style.line).toContain("underline");
+    expect(b).toBeGreaterThan(r + 40);
+    expect(b).toBeGreaterThan(g);
+
+    const [light, dark] = [
+      luminance(channels(style.color)),
+      luminance(channels(style.background)),
+    ].sort((x, y) => y - x);
+    expect((light + 0.05) / (dark + 0.05)).toBeGreaterThanOrEqual(4.5);
+  });
+}
+
+test("the consent sentence reads as one run of text, with no gap after the link", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const gap = await consentLink(page).evaluate((link) => {
+    const after = link.nextSibling;
+    if (!after) return null;
+    const range = document.createRange();
+    range.selectNodeContents(after);
+    return (
+      range.getBoundingClientRect().left - link.getBoundingClientRect().right
+    );
+  });
+  expect(gap).not.toBeNull();
+  expect(gap).toBeLessThanOrEqual(2);
 });

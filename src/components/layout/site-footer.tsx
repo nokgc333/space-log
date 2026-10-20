@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { Site } from "@/lib/content";
+import { PRIVACY_PATH } from "@/lib/routes";
 
 type Props = { site: Site; year: number };
 
@@ -16,7 +17,7 @@ export function SiteFooter({ site, year }: Props) {
         <p className="max-w-xl text-sm leading-relaxed text-muted">{note}</p>
         <div className="flex flex-col gap-2 font-mono text-xs text-muted md:items-end">
           <Link
-            href="/privacy"
+            href={PRIVACY_PATH}
             className="text-ink underline underline-offset-4"
           >
             {privacyLabel}

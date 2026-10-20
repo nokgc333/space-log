@@ -15,7 +15,10 @@ test("the footer link of the home page opens the privacy policy", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: site.footer.privacyLabel }).click();
+  await page
+    .locator("footer")
+    .getByRole("link", { name: site.footer.privacyLabel })
+    .click();
   await expect(page).toHaveURL(/\/privacy$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     privacy.title,
