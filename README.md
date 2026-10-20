@@ -3,6 +3,8 @@
 A one-page site for a fictional CG studio that specializes in Houdini and pipeline development.
 The studio is made up, although the site is real and built to production standards.
 
+Live site: <https://space-log.vercel.app>
+
 ## Screenshots
 
 Hero (light theme):

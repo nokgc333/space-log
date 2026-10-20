@@ -53,7 +53,7 @@ export const tools = {
       tags: ["Python", "OpenUSD", "FastAPI"],
       summary: "HoudiniとBlenderの間で渡すUSDの整合検査。",
       detail:
-        "座標系（up軸）・スケール単位・命名の食い違いを見つけて、CSV・JSON・HTMLのレポートに出します。自動修正はしません。",
+        "座標系（up軸）・スケール単位・命名の食い違いを見つけて、CSV・JSON・HTMLのレポートに出します。変換は、指定したときだけ行います。",
     },
     {
       id: "pipeboard",
