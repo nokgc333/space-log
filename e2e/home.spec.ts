@@ -530,3 +530,42 @@ test("the news list pages through every entry with the keyboard", async ({
   await expect(section.getByText(`1 / ${pageCount}`)).toBeVisible();
   expect(await items.allTextContents()).toEqual(firstPageTexts);
 });
+
+test("the hero heading starts where the section headings start on wide screens", async ({
+  page,
+}) => {
+  for (const width of [1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const hero = await boxOf(page.getByRole("heading", { level: 1 }));
+    const section = await boxOf(
+      page.getByRole("heading", { level: 2 }).first(),
+    );
+    expect(Math.abs(hero.x - section.x)).toBeLessThanOrEqual(1);
+  }
+});
+
+test("the pagers of the news list and the tools table sit at the left edge of their list", async ({
+  page,
+}) => {
+  await page.setViewportSize(DESKTOP_VIEWPORT);
+  await page.goto("/");
+
+  const pagers = [
+    { id: "news", list: "ol", labels: news.pager },
+    { id: "tools", list: "table", labels: tools.pager },
+  ];
+  for (const { id, list, labels } of pagers) {
+    const section = page.locator(`#${id}`);
+    const listBox = await boxOf(section.locator(list));
+    const previous = await boxOf(
+      section.getByRole("button", { name: labels.prev }),
+    );
+    const next = await boxOf(
+      section.getByRole("button", { name: labels.next }),
+    );
+    expect(previous.x - listBox.x).toBeGreaterThanOrEqual(0);
+    expect(previous.x - listBox.x).toBeLessThanOrEqual(16);
+    expect(next.x + next.width - listBox.x).toBeLessThan(200);
+  }
+});
