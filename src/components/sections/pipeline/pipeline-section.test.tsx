@@ -78,6 +78,15 @@ describe("PipelineSection", () => {
     expect(tokens.filter((token) => /flex-row/.test(token))).toEqual([]);
   });
 
+  it("never wraps the stage name or the tool, and sets its text without rounding the width of each letter", () => {
+    render(<PipelineSection pipeline={PIPELINE} />);
+    const list = screen.getAllByRole("list")[0];
+    expect(list.className).toContain("[text-rendering:geometricPrecision]");
+    const [first] = screen.getAllByRole("button", { name: /first/i });
+    for (const part of [...first.children])
+      expect(part).toHaveClass("whitespace-nowrap");
+  });
+
   it("selects the first stage at first", () => {
     render(<PipelineSection pipeline={PIPELINE} />);
     expect(screen.getByRole("button", { name: /FIRST/ })).toHaveAttribute(

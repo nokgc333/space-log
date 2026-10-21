@@ -22,7 +22,7 @@ export function PipelineSection({ pipeline }: { pipeline: Pipeline }) {
       <SectionHeading id="pipeline-title" heading={pipeline.heading} />
       <div className="flex min-w-0 flex-col gap-7">
         <div className="@container pb-2">
-          <ol className="grid auto-cols-fr grid-flow-col gap-x-[1em] text-[length:min(1rem,calc((100cqw-10px)/39.2))] md:gap-x-[1.5em] md:text-[length:min(1rem,calc((100cqw-10px)/41.2))]">
+          <ol className="grid auto-cols-fr grid-flow-col gap-x-[1em] text-[length:min(1rem,calc((100cqw-10px)/39.2))] [text-rendering:geometricPrecision] md:gap-x-[1.5em] md:text-[length:min(1rem,calc((100cqw-10px)/41.2))]">
             {pipeline.stages.map((stage) => (
               <li
                 key={stage.id}
@@ -34,10 +34,10 @@ export function PipelineSection({ pipeline }: { pipeline: Pipeline }) {
                   onClick={() => setSelectedId(stage.id)}
                   className="flex h-full w-full flex-col items-start gap-[0.25em] border border-ink px-[0.75em] py-[0.75em] text-left aria-pressed:bg-ink aria-pressed:text-surface"
                 >
-                  <span className="font-display text-[1em] leading-[1.5] font-bold tracking-wide">
+                  <span className="font-display text-[1em] leading-[1.5] font-bold tracking-wide whitespace-nowrap">
                     {stage.stage}
                   </span>
-                  <span className="font-mono text-[0.75em] leading-[1.3333]">
+                  <span className="font-mono text-[0.75em] leading-[1.3333] whitespace-nowrap">
                     {stage.tool}
                   </span>
                 </button>

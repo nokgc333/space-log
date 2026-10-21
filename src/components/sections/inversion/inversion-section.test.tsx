@@ -75,6 +75,7 @@ describe("InversionSection", () => {
         "gap-10",
         "justify-center",
         "max-lg:text-center",
+        "[text-rendering:geometricPrecision]",
       ].sort(),
     );
   });

@@ -45,7 +45,7 @@ export function InversionSection({ inversion }: { inversion: Inversion }) {
   return (
     <SectionFrame id="inversion" roomyStack>
       <SectionHeading id="inversion-title" heading={inversion.heading} />
-      <div className="@container flex flex-col justify-center gap-10 max-lg:text-center">
+      <div className="@container flex flex-col justify-center gap-10 [text-rendering:geometricPrecision] max-lg:text-center">
         {inversion.body.map((statement) => (
           <StatementRow key={statement.main} statement={statement} />
         ))}
