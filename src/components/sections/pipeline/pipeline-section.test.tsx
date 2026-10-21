@@ -53,6 +53,40 @@ describe("PipelineSection", () => {
     );
   });
 
+  it("shrinks the row of stage buttons to fit its container instead of scrolling sideways", () => {
+    render(<PipelineSection pipeline={PIPELINE} />);
+    const list = screen.getAllByRole("list")[0];
+    const container = list.parentElement as HTMLElement;
+    expect(container).toHaveClass("@container");
+    expect(container.className).not.toMatch(/overflow-x/);
+    expect(list.className).not.toMatch(/min-w-max/);
+    expect(list.className).toMatch(/cqw/);
+  });
+
+  it("sizes the stage buttons in em so they shrink with the row", () => {
+    render(<PipelineSection pipeline={PIPELINE} />);
+    const [first] = screen.getAllByRole("button", { name: /first|FIRST/i });
+    expect(first.className).toMatch(/px-\[0\.75em\]/);
+    expect(first.className).not.toMatch(/(^|\s)px-3(\s|$)/);
+  });
+
+  it("keeps the stage name above the tool at every screen size", () => {
+    render(<PipelineSection pipeline={PIPELINE} />);
+    const [first] = screen.getAllByRole("button", { name: /first/i });
+    const tokens = first.className.split(/\s+/);
+    expect(tokens).toContain("flex-col");
+    expect(tokens.filter((token) => /flex-row/.test(token))).toEqual([]);
+  });
+
+  it("never wraps the stage name or the tool, and sets its text without rounding the width of each letter", () => {
+    render(<PipelineSection pipeline={PIPELINE} />);
+    const list = screen.getAllByRole("list")[0];
+    expect(list.className).toContain("[text-rendering:geometricPrecision]");
+    const [first] = screen.getAllByRole("button", { name: /first/i });
+    for (const part of [...first.children])
+      expect(part).toHaveClass("whitespace-nowrap");
+  });
+
   it("selects the first stage at first", () => {
     render(<PipelineSection pipeline={PIPELINE} />);
     expect(screen.getByRole("button", { name: /FIRST/ })).toHaveAttribute(

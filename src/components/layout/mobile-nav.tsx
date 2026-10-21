@@ -20,7 +20,7 @@ export function MobileNav({ label, items }: Props) {
   }
 
   return (
-    <div className="md:hidden" onKeyDown={handleKeyDown}>
+    <div className="lg:hidden" onKeyDown={handleKeyDown}>
       <button
         ref={buttonRef}
         type="button"

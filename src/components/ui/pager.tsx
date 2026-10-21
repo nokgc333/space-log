@@ -11,7 +11,7 @@ export function Pager({ page, pageCount, labels, onChange }: Props) {
   if (pageCount <= 1) return null;
 
   return (
-    <div className="mt-4 flex items-center justify-end gap-3 font-mono text-xs text-muted">
+    <div className="mt-4 flex items-center justify-start gap-3 font-mono text-xs text-muted">
       <button
         type="button"
         aria-label={labels.prev}

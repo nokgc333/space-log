@@ -13,6 +13,7 @@ export const contact = {
     message: "内容",
     consent: "プライバシーポリシーに同意します",
   },
+  consentLink: { text: "プライバシーポリシー", note: "（新しいタブで開く）" },
   optionalMark: "任意",
   topics: [
     { value: "pipeline", label: "パイプライン設計" },

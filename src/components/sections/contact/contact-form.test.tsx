@@ -15,8 +15,9 @@ const CONTACT: Contact = {
     company: "Company",
     topic: "Topic",
     message: "Message",
-    consent: "I agree",
+    consent: "I agree to the privacy policy",
   },
+  consentLink: { text: "privacy policy", note: "(opens in a new tab)" },
   optionalMark: "optional",
   topics: [
     { value: "pipeline", label: "Pipeline" },
@@ -71,6 +72,28 @@ function setup(
 }
 
 describe("ContactForm", () => {
+  describe("layout up to the lg breakpoint", () => {
+    it("centers the consent line and its text, and keeps them at the start from lg", () => {
+      setup();
+      const line = field("consent").closest("label") as HTMLElement;
+      expect(line).toHaveClass(
+        "flex",
+        "items-center",
+        "max-lg:justify-center",
+        "max-lg:text-center",
+      );
+      expect(line.className).not.toMatch(
+        /(^|\s)(justify-center|text-center)(\s|$)/,
+      );
+    });
+
+    it("centers the send button, and keeps it at the start from lg", () => {
+      setup();
+      const button = screen.getByRole("button", { name: CONTACT.submit });
+      expect(button).toHaveClass("self-start", "max-lg:self-center");
+    });
+  });
+
   describe("checking the entry in the browser", () => {
     it("asks for every required field and sends nothing", async () => {
       const submit = setup();
@@ -291,6 +314,45 @@ describe("ContactForm", () => {
       expect(field("email")).toHaveAttribute("autocomplete", "email");
       expect(field("email")).toHaveAttribute("type", "email");
       expect(field("company")).toHaveAttribute("autocomplete", "organization");
+    });
+  });
+
+  describe("consent", () => {
+    it("links the privacy policy inside the consent label", () => {
+      setup();
+      const link = screen.getByRole("link", { name: "privacy policy" });
+      expect(link).toHaveAttribute("href", "/privacy");
+      expect(link.closest("label")).toContainElement(field("consent"));
+    });
+
+    it("describes the link by the new tab note without showing it", () => {
+      setup();
+      const link = screen.getByRole("link", { name: "privacy policy" });
+      expect(link).toHaveAccessibleDescription("(opens in a new tab)");
+      expect(screen.getByText("(opens in a new tab)")).not.toBeVisible();
+    });
+
+    it("keeps the checkbox and the whole sentence as the only two items of the label", () => {
+      setup();
+      const label = screen
+        .getByRole("link", { name: "privacy policy" })
+        .closest("label");
+      expect(label?.childNodes).toHaveLength(2);
+    });
+
+    it("keeps the label text exactly the sentence", () => {
+      setup();
+      expect(
+        screen.getByRole("link", { name: "privacy policy" }).closest("label")
+          ?.textContent,
+      ).toBe("I agree to the privacy policy");
+    });
+
+    it("keeps the checkbox named by the whole sentence, without the new tab note", () => {
+      setup();
+      expect(
+        screen.getByRole("checkbox", { name: "I agree to the privacy policy" }),
+      ).toBeInTheDocument();
     });
   });
 });

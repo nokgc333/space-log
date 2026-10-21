@@ -21,23 +21,25 @@ export function PipelineSection({ pipeline }: { pipeline: Pipeline }) {
     <SectionFrame id="pipeline">
       <SectionHeading id="pipeline-title" heading={pipeline.heading} />
       <div className="flex min-w-0 flex-col gap-7">
-        <div className="overflow-x-auto pb-2">
-          <ol className="grid min-w-max auto-cols-fr grid-flow-col gap-x-4 md:gap-x-6">
+        <div className="@container pb-2">
+          <ol className="grid auto-cols-fr grid-flow-col gap-x-[1em] text-[length:min(1rem,calc((100cqw-10px)/39.2))] [text-rendering:geometricPrecision] md:gap-x-[1.5em] md:text-[length:min(1rem,calc((100cqw-10px)/41.2))]">
             {pipeline.stages.map((stage) => (
               <li
                 key={stage.id}
-                className="relative not-first:before:absolute not-first:before:top-1/2 not-first:before:right-full not-first:before:h-px not-first:before:w-4 not-first:before:bg-rule md:not-first:before:w-6"
+                className="relative not-first:before:absolute not-first:before:top-1/2 not-first:before:right-full not-first:before:h-px not-first:before:w-[1em] not-first:before:bg-rule md:not-first:before:w-[1.5em]"
               >
                 <button
                   type="button"
                   aria-pressed={stage.id === selected.id}
                   onClick={() => setSelectedId(stage.id)}
-                  className="flex h-full w-full flex-col items-start gap-1 border border-ink px-3 py-3 text-left aria-pressed:bg-ink aria-pressed:text-surface"
+                  className="flex h-full w-full flex-col items-start gap-[0.25em] border border-ink px-[0.75em] py-[0.75em] text-left aria-pressed:bg-ink aria-pressed:text-surface"
                 >
-                  <span className="font-display text-base font-bold tracking-wide">
+                  <span className="font-display text-[1em] leading-[1.5] font-bold tracking-wide whitespace-nowrap">
                     {stage.stage}
                   </span>
-                  <span className="font-mono text-xs">{stage.tool}</span>
+                  <span className="font-mono text-[0.75em] leading-[1.3333] whitespace-nowrap">
+                    {stage.tool}
+                  </span>
                 </button>
               </li>
             ))}
