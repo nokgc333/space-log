@@ -45,9 +45,22 @@ export const heroSchema = z.object({
   sceneFallback: text,
 });
 
+const inversionStatementSchema = z
+  .object({
+    lead: text.optional(),
+    main: text,
+    highlight: text.optional(),
+    tail: text.optional(),
+  })
+  .refine(
+    (statement) =>
+      !statement.highlight || statement.main.includes(statement.highlight),
+    "the highlighted phrase must be in the main text",
+  );
+
 export const inversionSchema = z.object({
   heading: sectionHeadingSchema,
-  body: z.array(text).min(1),
+  body: z.array(inversionStatementSchema).min(1),
 });
 
 export const newsSchema = z.object({

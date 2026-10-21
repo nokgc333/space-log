@@ -180,7 +180,7 @@ export function ContactForm({ contact, submit }: Props) {
         <input tabIndex={-1} autoComplete="off" {...register("website")} />
       </div>
       <div>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm max-lg:justify-center max-lg:text-center">
           <input
             type="checkbox"
             {...a11y("consent")}
@@ -203,7 +203,7 @@ export function ContactForm({ contact, submit }: Props) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="self-start border border-ink bg-ink px-6 py-3 font-mono text-xs tracking-widest text-surface disabled:opacity-60"
+        className="self-start border border-ink bg-ink px-6 py-3 font-mono text-xs tracking-widest text-surface disabled:opacity-60 max-lg:self-center"
       >
         {isSubmitting ? contact.sending : contact.submit}
       </button>

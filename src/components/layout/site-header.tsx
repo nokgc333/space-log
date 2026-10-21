@@ -20,9 +20,9 @@ export function SiteHeader({ site, navBase = "" }: Props) {
       >
         {site.skipLabel}
       </a>
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 md:px-12">
         <Logo name={site.name} />
-        <nav aria-label={site.menuLabel} className="hidden md:block">
+        <nav aria-label={site.menuLabel} className="hidden lg:block">
           <ul className="flex items-center gap-6">
             {navItems.map((item) => (
               <li key={item.href}>
