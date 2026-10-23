@@ -49,6 +49,19 @@ describe("SiteFooter", () => {
     expect(links.parentElement).toHaveClass("items-center", "lg:items-end");
   });
 
+  it("sets one text size for the whole footer in its frame, and no part sets its own", () => {
+    render(<SiteFooter site={site} year={site.footer.copyrightStartYear} />);
+    const frame = screen
+      .getByText(site.footer.note)
+      .closest(".max-w-7xl") as HTMLElement;
+    expect(frame).toHaveClass("text-xs");
+    expect(frame.children.length).toBeGreaterThanOrEqual(3);
+    for (const part of [...frame.children])
+      expect(part.className).not.toMatch(
+        /(^|\s)text-(xs|sm|base|lg|xl|2xl|3xl)(\s|$)/,
+      );
+  });
+
   it("links to the privacy policy", () => {
     render(<SiteFooter site={site} year={site.footer.copyrightStartYear} />);
     expect(

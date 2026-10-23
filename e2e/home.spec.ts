@@ -898,6 +898,28 @@ test("up to 1023px the sections NEWS, PIPELINE, TOOLS and CONTACT have a narrowe
   }
 });
 
+test("every text of the footer has the text size of the privacy policy link, at every screen size", async ({
+  page,
+}) => {
+  for (const width of [1440, 1024, 1023, 375, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const sizes = await page.evaluate(() => {
+      const footer = document.querySelector("footer") as HTMLElement;
+      const link = footer.querySelector("a") as HTMLElement;
+      return {
+        link: parseFloat(getComputedStyle(link).fontSize),
+        texts: [...footer.querySelectorAll("p")].map((paragraph) =>
+          parseFloat(getComputedStyle(paragraph).fontSize),
+        ),
+      };
+    });
+    expect(sizes.link).toBe(12);
+    expect(sizes.texts).toHaveLength(2);
+    for (const size of sizes.texts) expect(size).toBe(sizes.link);
+  }
+});
+
 test("up to 1023px each part of the footer is centered from left to right", async ({
   page,
 }) => {
