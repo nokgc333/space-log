@@ -35,6 +35,44 @@ function countActionPosts(page: Page) {
   return counter;
 }
 
+test("the arrow of the topic select is inset from the right edge as far as its text is from the left edge, and a click on it still reaches the select", async ({
+  page,
+}) => {
+  for (const width of [1440, 768, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const select = field(page, "topic");
+    await select.scrollIntoViewIfNeeded();
+    const measured = await select.evaluate((element) => {
+      const arrow = element.parentElement?.querySelector("svg") as SVGElement;
+      const box = element.getBoundingClientRect();
+      const arrowBox = arrow.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return {
+        rightGap: box.right - arrowBox.right,
+        leftInset:
+          parseFloat(style.paddingLeft) + parseFloat(style.borderLeftWidth),
+        dy: arrowBox.top + arrowBox.height / 2 - (box.top + box.height / 2),
+        arrowColor: getComputedStyle(arrow).color,
+        selectColor: style.color,
+        textRoom: parseFloat(style.paddingRight) - arrowBox.width,
+        x: arrowBox.left + arrowBox.width / 2,
+        y: arrowBox.top + arrowBox.height / 2,
+      };
+    });
+    expect(
+      Math.abs(measured.rightGap - measured.leftInset),
+    ).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(measured.dy)).toBeLessThanOrEqual(1);
+    expect(measured.arrowColor).toBe(measured.selectColor);
+    expect(measured.textRoom).toBeGreaterThanOrEqual(16);
+
+    await page.mouse.click(measured.x, measured.y);
+    await expect(select).toBeFocused();
+    await page.keyboard.press("Escape");
+  }
+});
+
 test.beforeEach(async ({ context }) => {
   await context.setExtraHTTPHeaders(uniqueVisitorHeaders());
 });

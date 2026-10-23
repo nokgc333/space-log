@@ -32,6 +32,8 @@ const EMPTY_VALUES: ContactValues = {
 const LABEL = "font-mono text-xs tracking-widest";
 const INPUT =
   "mt-2 w-full border border-control bg-surface px-3 py-2 outline-none focus:border-ink";
+const SELECT =
+  "w-full appearance-none border border-control bg-surface px-3 py-2 pr-10 outline-none focus:border-ink";
 
 export function ContactForm({ contact, submit }: Props) {
   const consentNoteId = useId();
@@ -146,21 +148,35 @@ export function ContactForm({ contact, submit }: Props) {
         <label htmlFor="contact-topic" className={LABEL}>
           {contact.fields.topic}
         </label>
-        <select
-          id="contact-topic"
-          className={INPUT}
-          {...a11y("topic")}
-          {...register("topic")}
-        >
-          <option value="" disabled>
-            —
-          </option>
-          {contact.topics.map((topic) => (
-            <option key={topic.value} value={topic.value}>
-              {topic.label}
+        <div className="relative mt-2">
+          <select
+            id="contact-topic"
+            className={SELECT}
+            {...a11y("topic")}
+            {...register("topic")}
+          >
+            <option value="" disabled>
+              —
             </option>
-          ))}
-        </select>
+            {contact.topics.map((topic) => (
+              <option key={topic.value} value={topic.value}>
+                {topic.label}
+              </option>
+            ))}
+          </select>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 12 8"
+            className="pointer-events-none absolute top-1/2 right-[calc(0.75rem+1px)] h-2 w-3 -translate-y-1/2 text-ink"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M1 1.5 6 6.5l5-5" />
+          </svg>
+        </div>
         {fieldError("topic")}
       </div>
       <div>

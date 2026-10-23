@@ -72,6 +72,36 @@ function setup(
 }
 
 describe("ContactForm", () => {
+  describe("the topic select", () => {
+    it("draws its own arrow, which is inset from the right edge, instead of the browser's arrow stuck to the edge", () => {
+      setup();
+      const select = field("topic") as HTMLSelectElement;
+      const wrapper = select.parentElement as HTMLElement;
+      expect(select).toHaveClass("appearance-none", "pr-10");
+      expect(select).not.toHaveClass("mt-2");
+      expect(wrapper).toHaveClass("relative", "mt-2");
+
+      const arrow = wrapper.querySelector("svg") as SVGElement;
+      expect(arrow).toHaveAttribute("aria-hidden", "true");
+      expect(arrow).toHaveClass(
+        "pointer-events-none",
+        "absolute",
+        "right-[calc(0.75rem+1px)]",
+        "top-1/2",
+      );
+    });
+
+    it("leaves the other fields as they were", () => {
+      setup();
+      for (const name of ["name", "email", "message"] as const) {
+        const input = field(name);
+        expect(input).toHaveClass("mt-2", "px-3");
+        expect(input).not.toHaveClass("appearance-none");
+        expect(input.parentElement?.querySelector("svg")).toBeNull();
+      }
+    });
+  });
+
   describe("layout up to the lg breakpoint", () => {
     it("centers the consent line and its text, and keeps them at the start from lg", () => {
       setup();
