@@ -18,6 +18,34 @@ async function boxOf(locator: Locator): Promise<Box> {
   return box;
 }
 
+test("the page declares Japanese, and takes its title and description from the site content", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+  await expect(page).toHaveTitle(site.name);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    "content",
+    site.description,
+  );
+});
+
+test("the three font families of the design are applied to the text, the titles and the code-like labels", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const families = await page.evaluate(() => ({
+    body: getComputedStyle(document.body).fontFamily,
+    title: getComputedStyle(document.querySelector("#news h2") as HTMLElement)
+      .fontFamily,
+    label: getComputedStyle(document.querySelector("footer a") as HTMLElement)
+      .fontFamily,
+  }));
+  expect(families.body).toContain("IBM Plex Sans JP");
+  expect(families.title).toContain("IBM Plex Sans Condensed");
+  expect(families.label).toContain("IBM Plex Mono");
+});
+
 test("the home page shows one top-level heading", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -895,6 +923,108 @@ test("up to 1023px the sections NEWS, PIPELINE, TOOLS and CONTACT have a narrowe
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
     expect(await gaps()).toEqual(["48px", "48px", "48px", "48px", "48px"]);
+  }
+});
+
+test("the header and the footer keep their side padding, and the footer its text alignment and spread", async ({
+  page,
+}) => {
+  const cases = [
+    { width: 375, padding: 16 },
+    { width: 767, padding: 16 },
+    { width: 768, padding: 48 },
+    { width: 1023, padding: 48 },
+    { width: 1024, padding: 48 },
+    { width: 1440, padding: 48 },
+  ];
+  for (const { width, padding } of cases) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const frames = await page.evaluate(() => {
+      const header = getComputedStyle(
+        document.querySelector("header > div") as HTMLElement,
+      );
+      const footer = getComputedStyle(
+        document.querySelector("footer > div") as HTMLElement,
+      );
+      return {
+        headerPadding: parseFloat(header.paddingLeft),
+        footerPadding: parseFloat(footer.paddingLeft),
+        textAlign: footer.textAlign,
+        justify: footer.justifyContent,
+      };
+    });
+    expect(frames.headerPadding).toBe(padding);
+    expect(frames.footerPadding).toBe(padding);
+    if (width < 1024) {
+      expect(frames.textAlign).toBe("center");
+    } else {
+      expect(["start", "left"]).toContain(frames.textAlign);
+      expect(frames.justify).toBe("space-between");
+    }
+  }
+});
+
+test("the section frame and the INVERSION statements keep their gaps and their vertical centering", async ({
+  page,
+}) => {
+  for (const width of [1440, 1024, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const values = await page.evaluate(() => {
+      const frame = getComputedStyle(
+        document.querySelector("#news > div") as HTMLElement,
+      );
+      const area = getComputedStyle(
+        document.querySelector("#inversion p.font-bold")
+          ?.parentElement as HTMLElement,
+      );
+      const [lead, main] = [
+        ...(document.querySelector("#inversion p.font-bold")
+          ?.children as HTMLCollection),
+      ].map((part) => {
+        const style = getComputedStyle(part);
+        return parseFloat(style.lineHeight) / parseFloat(style.fontSize);
+      });
+      return {
+        columnGap: frame.columnGap,
+        rowGap: area.rowGap,
+        justify: area.justifyContent,
+        lead,
+        main,
+      };
+    });
+    if (width >= 1024) expect(values.columnGap).toBe("120px");
+    expect(values.rowGap).toBe("40px");
+    expect(values.justify).toBe("center");
+    expect(values.lead).toBeCloseTo(1.5, 2);
+    expect(values.main).toBeCloseTo(1.45, 2);
+  }
+});
+
+test("the PIPELINE stage buttons keep their spacing in proportion to their text", async ({
+  page,
+}) => {
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const spacing = await page.evaluate(() => {
+      const row = document.querySelector("#pipeline ol") as HTMLElement;
+      const font = parseFloat(getComputedStyle(row).fontSize);
+      const button = getComputedStyle(row.querySelector("button")!);
+      const connector = getComputedStyle(row.children[1], "::before");
+      return {
+        gap: parseFloat(getComputedStyle(row).columnGap) / font,
+        padding: parseFloat(button.paddingTop) / font,
+        paddingSide: parseFloat(button.paddingLeft) / font,
+        connector: parseFloat(connector.width) / font,
+      };
+    });
+    const gap = width >= 768 ? 1.5 : 1;
+    expect(spacing.gap).toBeCloseTo(gap, 2);
+    expect(spacing.connector).toBeCloseTo(gap, 2);
+    expect(spacing.padding).toBeCloseTo(0.75, 2);
+    expect(spacing.paddingSide).toBeCloseTo(0.75, 2);
   }
 });
 

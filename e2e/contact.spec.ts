@@ -73,6 +73,46 @@ test("the arrow of the topic select is inset from the right edge as far as its t
   }
 });
 
+test("the form keeps its field spacing, the plain look of the select, and the alignment of the consent line and the button", async ({
+  page,
+}) => {
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const form = await page.evaluate(() => {
+      const select = document.querySelector("#contact-topic") as HTMLElement;
+      const selectStyle = getComputedStyle(select);
+      const fields = ["contact-name", "contact-email", "contact-message"].map(
+        (id) =>
+          parseFloat(
+            getComputedStyle(document.getElementById(id) as HTMLElement)
+              .marginTop,
+          ),
+      );
+      const label = document.querySelector(
+        "#contact label.flex",
+      ) as HTMLElement;
+      const button = document.querySelector(
+        '#contact button[type="submit"]',
+      ) as HTMLElement;
+      return {
+        appearance: selectStyle.appearance,
+        selectGap: parseFloat(
+          getComputedStyle(select.parentElement as HTMLElement).marginTop,
+        ),
+        fields,
+        consentAlign: getComputedStyle(label).alignItems,
+        buttonAlign: getComputedStyle(button).alignSelf,
+      };
+    });
+    expect(form.appearance).toBe("none");
+    expect(form.selectGap).toBe(8);
+    for (const gap of form.fields) expect(gap).toBe(8);
+    expect(form.consentAlign).toBe("center");
+    expect(form.buttonAlign).toBe(width >= 1024 ? "flex-start" : "center");
+  }
+});
+
 test.beforeEach(async ({ context }) => {
   await context.setExtraHTTPHeaders(uniqueVisitorHeaders());
 });
