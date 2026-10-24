@@ -5,6 +5,8 @@ import { contact } from "@content/sections/contact";
 import { privacy } from "@content/privacy";
 import { site } from "@content/site";
 
+import { openAt } from "./viewport";
+
 async function boxOf(locator: Locator) {
   const box = await locator.boundingBox();
   if (!box) throw new Error("the element is not visible");
@@ -33,8 +35,7 @@ test("the footer link of the home page opens the privacy policy", async ({
 test("the header nav of the privacy page leads to the sections of the home page", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/privacy");
+  await openAt(page, 1440, 900, "/privacy");
   const item = site.nav[1];
   await page
     .getByRole("banner")
@@ -63,8 +64,7 @@ test("the skip link lands on the main content", async ({ page }) => {
 test("reads as one column from top to bottom, with the title centered", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/privacy");
+  await openAt(page, 1440, 900, "/privacy");
   const title = await boxOf(page.getByRole("heading", { level: 1 }));
   const first = await boxOf(
     page.getByRole("heading", { level: 2, name: privacy.sections[0].heading }),
@@ -93,8 +93,7 @@ test("reads as one column from top to bottom, with the title centered", async ({
 });
 
 test("the text of every chapter lines up with the lead", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/privacy");
+  await openAt(page, 1440, 900, "/privacy");
   const lead = await boxOf(page.getByText(privacy.lead));
   for (const section of privacy.sections) {
     const heading = await boxOf(
@@ -105,8 +104,7 @@ test("the text of every chapter lines up with the lead", async ({ page }) => {
 });
 
 test("fits a phone without sideways scrolling", async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 800 });
-  await page.goto("/privacy");
+  await openAt(page, 375, 800, "/privacy");
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
   );

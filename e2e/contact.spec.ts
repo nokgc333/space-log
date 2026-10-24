@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { contact } from "@content/sections/contact";
 import { site } from "@content/site";
 
+import { openAt } from "./viewport";
 import { uniqueVisitorHeaders } from "./visitor";
 
 const field = (page: Page, name: keyof typeof contact.fields) =>
@@ -39,8 +40,7 @@ test("the arrow of the topic select is inset from the right edge as far as its t
   page,
 }) => {
   for (const width of [1440, 768, 375]) {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto("/");
+    await openAt(page, width, 900);
     const select = field(page, "topic");
     await select.scrollIntoViewIfNeeded();
     const measured = await select.evaluate((element) => {
@@ -77,8 +77,7 @@ test("the form keeps its field spacing, the plain look of the select, and the al
   page,
 }) => {
   for (const width of [1440, 375]) {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto("/");
+    await openAt(page, width, 900);
     const form = await page.evaluate(() => {
       const select = document.querySelector("#contact-topic") as HTMLElement;
       const selectStyle = getComputedStyle(select);
