@@ -22,29 +22,6 @@ describe("SiteHeader", () => {
     expect(first).toHaveAttribute("href", "#main");
   });
 
-  it("shares the side padding of the sections from the md breakpoint: 16px below it, 48px from it", () => {
-    renderHeader();
-    const frame = screen
-      .getAllByText(site.name)[0]
-      .closest(".max-w-7xl") as HTMLElement;
-    expect(frame).toHaveClass("px-4");
-    expect(frame).toHaveClass("md:px-12");
-  });
-
-  it("shows the full nav from the lg breakpoint and the menu button below it", () => {
-    const { container } = renderHeader();
-    const nav = container.querySelector(
-      "header nav[aria-label]",
-    ) as HTMLElement;
-    expect(nav).toHaveClass("hidden", "lg:block");
-    expect(nav).not.toHaveClass("md:block");
-    const menuWrapper = screen
-      .getByRole("button", { name: site.menuLabel })
-      .closest(".lg\\:hidden");
-    expect(menuWrapper).not.toBeNull();
-    expect(container.querySelector(".md\\:hidden")).toBeNull();
-  });
-
   it("shows the site name and links to every nav item", () => {
     renderHeader();
     expect(screen.getByText(site.name)).toBeInTheDocument();

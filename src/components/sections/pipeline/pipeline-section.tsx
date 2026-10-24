@@ -34,7 +34,7 @@ export function PipelineSection({ pipeline }: { pipeline: Pipeline }) {
                   onClick={() => setSelectedId(stage.id)}
                   className="flex h-full w-full flex-col items-start gap-[0.25em] border border-ink px-[0.75em] py-[0.75em] text-left aria-pressed:bg-ink aria-pressed:text-surface"
                 >
-                  <span className="font-display text-[1em] leading-[1.5] font-bold tracking-wide whitespace-nowrap">
+                  <span className="font-display leading-[1.5] font-bold tracking-wide whitespace-nowrap">
                     {stage.stage}
                   </span>
                   <span className="font-mono text-[0.75em] leading-[1.3333] whitespace-nowrap">

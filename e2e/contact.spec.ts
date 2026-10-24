@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { contact } from "@content/sections/contact";
 import { site } from "@content/site";
 
+import { openAt } from "./viewport";
 import { uniqueVisitorHeaders } from "./visitor";
 
 const field = (page: Page, name: keyof typeof contact.fields) =>
@@ -34,6 +35,82 @@ function countActionPosts(page: Page) {
   });
   return counter;
 }
+
+test("the arrow of the topic select is inset from the right edge as far as its text is from the left edge, and a click on it still reaches the select", async ({
+  page,
+}) => {
+  for (const width of [1440, 768, 375]) {
+    await openAt(page, width, 900);
+    const select = field(page, "topic");
+    await select.scrollIntoViewIfNeeded();
+    const measured = await select.evaluate((element) => {
+      const arrow = element.parentElement?.querySelector("svg") as SVGElement;
+      const box = element.getBoundingClientRect();
+      const arrowBox = arrow.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return {
+        rightGap: box.right - arrowBox.right,
+        leftInset:
+          parseFloat(style.paddingLeft) + parseFloat(style.borderLeftWidth),
+        dy: arrowBox.top + arrowBox.height / 2 - (box.top + box.height / 2),
+        arrowColor: getComputedStyle(arrow).color,
+        selectColor: style.color,
+        textRoom: parseFloat(style.paddingRight) - arrowBox.width,
+        x: arrowBox.left + arrowBox.width / 2,
+        y: arrowBox.top + arrowBox.height / 2,
+      };
+    });
+    expect(
+      Math.abs(measured.rightGap - measured.leftInset),
+    ).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(measured.dy)).toBeLessThanOrEqual(1);
+    expect(measured.arrowColor).toBe(measured.selectColor);
+    expect(measured.textRoom).toBeGreaterThanOrEqual(16);
+
+    await page.mouse.click(measured.x, measured.y);
+    await expect(select).toBeFocused();
+    await page.keyboard.press("Escape");
+  }
+});
+
+test("the form keeps its field spacing, the plain look of the select, and the alignment of the consent line and the button", async ({
+  page,
+}) => {
+  for (const width of [1440, 375]) {
+    await openAt(page, width, 900);
+    const form = await page.evaluate(() => {
+      const select = document.querySelector("#contact-topic") as HTMLElement;
+      const selectStyle = getComputedStyle(select);
+      const fields = ["contact-name", "contact-email", "contact-message"].map(
+        (id) =>
+          parseFloat(
+            getComputedStyle(document.getElementById(id) as HTMLElement)
+              .marginTop,
+          ),
+      );
+      const label = document.querySelector(
+        "#contact label.flex",
+      ) as HTMLElement;
+      const button = document.querySelector(
+        '#contact button[type="submit"]',
+      ) as HTMLElement;
+      return {
+        appearance: selectStyle.appearance,
+        selectGap: parseFloat(
+          getComputedStyle(select.parentElement as HTMLElement).marginTop,
+        ),
+        fields,
+        consentAlign: getComputedStyle(label).alignItems,
+        buttonAlign: getComputedStyle(button).alignSelf,
+      };
+    });
+    expect(form.appearance).toBe("none");
+    expect(form.selectGap).toBe(8);
+    for (const gap of form.fields) expect(gap).toBe(8);
+    expect(form.consentAlign).toBe("center");
+    expect(form.buttonAlign).toBe(width >= 1024 ? "flex-start" : "center");
+  }
+});
 
 test.beforeEach(async ({ context }) => {
   await context.setExtraHTTPHeaders(uniqueVisitorHeaders());

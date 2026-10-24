@@ -72,28 +72,6 @@ function setup(
 }
 
 describe("ContactForm", () => {
-  describe("layout up to the lg breakpoint", () => {
-    it("centers the consent line and its text, and keeps them at the start from lg", () => {
-      setup();
-      const line = field("consent").closest("label") as HTMLElement;
-      expect(line).toHaveClass(
-        "flex",
-        "items-center",
-        "max-lg:justify-center",
-        "max-lg:text-center",
-      );
-      expect(line.className).not.toMatch(
-        /(^|\s)(justify-center|text-center)(\s|$)/,
-      );
-    });
-
-    it("centers the send button, and keeps it at the start from lg", () => {
-      setup();
-      const button = screen.getByRole("button", { name: CONTACT.submit });
-      expect(button).toHaveClass("self-start", "max-lg:self-center");
-    });
-  });
-
   describe("checking the entry in the browser", () => {
     it("asks for every required field and sends nothing", async () => {
       const submit = setup();
