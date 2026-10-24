@@ -24,7 +24,7 @@ export function HeroSection({ hero }: { hero: Hero }) {
         fallbackText={hero.sceneFallback}
         eventSource={section}
       />
-      <div className="pointer-events-none relative mx-auto w-full max-w-7xl px-12 pt-24 pb-16 max-lg:flex max-lg:flex-col max-lg:items-center max-lg:text-center max-lg:[&>header]:w-full">
+      <div className="pointer-events-none relative mx-auto w-full max-w-7xl px-12 pt-24 pb-16">
         <SectionHeading
           id="hero-title"
           heading={hero.heading}
