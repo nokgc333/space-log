@@ -15,7 +15,6 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  // Run against a production build so it never collides with a running dev server.
   webServer: {
     command: `npm run build && npm run start -- --port ${PORT}`,
     url: BASE_URL,

@@ -2,26 +2,24 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Light */
 :root {
   --surface: #ffffff;
-  --ink: #0a0a0a; /* 19.8:1 */
-  --muted: #595959; /* 7.0:1 */
-  --rule: #d4d4d4; /* 1.5:1, dividers only */
-  --control: #8a8a8a; /* 3.5:1, borders of buttons and fields (WCAG 1.4.11) */
-  --signal: #b93a00; /* 5.7:1 */
-  --link: #0550ae; /* 7.6:1 */
+  --ink: #0a0a0a;
+  --muted: #595959;
+  --rule: #d4d4d4;
+  --control: #8a8a8a;
+  --signal: #b93a00;
+  --link: #0550ae;
 }
 
-/* Dark */
 .dark {
   --surface: #050505;
-  --ink: #f2f2f2; /* 18.2:1 */
-  --muted: #a3a3a3; /* 8.1:1 */
-  --rule: #2e2e2e; /* 1.5:1, dividers only */
-  --control: #6b6b6b; /* 3.8:1 */
-  --signal: #ff7a3d; /* 7.9:1 */
-  --link: #79b8ff; /* 9.8:1 */
+  --ink: #f2f2f2;
+  --muted: #a3a3a3;
+  --rule: #2e2e2e;
+  --control: #6b6b6b;
+  --signal: #ff7a3d;
+  --link: #79b8ff;
 }
 
 @theme inline {

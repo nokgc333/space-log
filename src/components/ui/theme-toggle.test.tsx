@@ -17,7 +17,6 @@ function renderToggle() {
 
 describe("ThemeToggle", () => {
   beforeEach(() => {
-    // next-themes remembers the choice here, which would leak between tests
     localStorage.clear();
     document.documentElement.classList.remove("dark");
   });
