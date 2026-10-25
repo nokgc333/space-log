@@ -2,6 +2,8 @@
 
 import { type RefObject, useEffect, useRef } from "react";
 
+import { normalizePointer } from "./network-pointer";
+
 export type NetworkInput = {
   x: number;
   y: number;
@@ -31,10 +33,14 @@ export function useNetworkInput(
     if (!source || !enabled) return;
 
     const move = (event: PointerEvent) => {
-      const rect = source.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      current.y = 1 - ((event.clientY - rect.top) / rect.height) * 2;
+      const point = normalizePointer(
+        source.getBoundingClientRect(),
+        event.clientX,
+        event.clientY,
+      );
+      if (!point) return;
+      current.x = point.x;
+      current.y = point.y;
       current.inside = event.pointerType !== "touch";
     };
     const leave = () => {
@@ -47,10 +53,14 @@ export function useNetworkInput(
         event.target.closest("a, button, input, select, textarea")
       )
         return;
-      const rect = source.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      current.clickX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      current.clickY = 1 - ((event.clientY - rect.top) / rect.height) * 2;
+      const point = normalizePointer(
+        source.getBoundingClientRect(),
+        event.clientX,
+        event.clientY,
+      );
+      if (!point) return;
+      current.clickX = point.x;
+      current.clickY = point.y;
       current.pendingClick = true;
     };
     source.addEventListener("pointermove", move);

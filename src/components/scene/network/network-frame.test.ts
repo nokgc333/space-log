@@ -34,6 +34,11 @@ const idle = () => ({
   pendingClick: false,
 });
 
+const rgbOf = (hex: string) => {
+  const { r, g, b } = new Color(hex);
+  return { r, g, b };
+};
+
 describe("findQueryNode", () => {
   it("matches Three projection when current particles have rotated and drifted", () => {
     const positions = new Float32Array([1.2, 0.7, 1.8, -1, 0, -1]);
@@ -60,7 +65,7 @@ describe("stepNetworkFrame", () => {
       expect(
         Math.hypot(...n.buffers.origins.slice(i, i + 3)),
       ).toBeLessThanOrEqual(3.000001);
-    expect(n.palette.node).toEqual(new Color(PALETTE.dark.node));
+    expect(n.palette.node).toEqual(rgbOf(PALETTE.dark.node));
     expect(n.nodeColors[0]).toBeCloseTo(n.palette.node.r);
   });
   it("uses original physics and following endpoints when an idle frame advances", () => {
@@ -108,8 +113,8 @@ describe("stepNetworkFrame", () => {
       elapsed: 100,
     });
     expect(JSON.stringify(frozen())).toBe(before);
-    expect(n.palette.node).toEqual(new Color(PALETTE.dark.node));
-    expect(n.palette.signal).toEqual(new Color(PALETTE.dark.signal));
+    expect(n.palette.node).toEqual(rgbOf(PALETTE.dark.node));
+    expect(n.palette.signal).toEqual(rgbOf(PALETTE.dark.signal));
     expect(input.pendingClick).toBe(false);
   });
   it("runs idle ripples and accepts clicks when 720 frames advance without reallocating", () => {

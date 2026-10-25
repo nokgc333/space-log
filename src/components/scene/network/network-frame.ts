@@ -1,4 +1,3 @@
-import { Color } from "three";
 import { stepParticles } from "../particle-physics";
 import {
   type FrameLoop,
@@ -12,6 +11,7 @@ import {
   stepActivity,
 } from "./network-activity";
 import { buildNetworkGraph } from "./network-graph";
+import { LINEAR_PALETTE, lerpRgb } from "./network-palette";
 import * as S from "./network-settings";
 import type { NetworkInput } from "./use-network-input";
 
@@ -62,7 +62,7 @@ export function createNetworkState(isDark: boolean) {
   const origins = spherePoints(PARTICLE_COUNT, PARTICLE_RADIUS);
   const graph = buildNetworkGraph(origins);
   const positions = origins.slice();
-  const theme = S.PALETTE[isDark ? "dark" : "light"];
+  const theme = LINEAR_PALETTE[isDark ? "dark" : "light"];
   const network = {
     buffers: {
       origins,
@@ -74,8 +74,7 @@ export function createNetworkState(isDark: boolean) {
     nodeColors: new Float32Array(origins.length),
     edgePositions: positions,
     edgeColors: new Float32Array(PARTICLE_COUNT * 4),
-    palette: { node: new Color(theme.node), signal: new Color(theme.signal) },
-    targets: { node: new Color(), signal: new Color() },
+    palette: { node: { ...theme.node }, signal: { ...theme.signal } },
     pointer: { x: 1e6, y: 1e6, z: 0 },
     time: 0,
     rotation: 0,
@@ -116,13 +115,11 @@ function blendPalette(
   { isDark, frameLoop }: FrameContext,
   delta: number,
 ): void {
-  const theme = S.PALETTE[isDark ? "dark" : "light"];
-  n.targets.node.set(theme.node);
-  n.targets.signal.set(theme.signal);
+  const target = LINEAR_PALETTE[isDark ? "dark" : "light"];
   const ease =
     frameLoop === "demand" ? 1 : 1 - Math.exp(-S.COLOR_RESPONSE * delta);
-  n.palette.node.lerp(n.targets.node, ease);
-  n.palette.signal.lerp(n.targets.signal, ease);
+  lerpRgb(n.palette.node, target.node, ease);
+  lerpRgb(n.palette.signal, target.signal, ease);
 }
 
 function aimPointer(
