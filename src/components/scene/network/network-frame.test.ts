@@ -40,11 +40,15 @@ describe("findQueryNode", () => {
     const point = new Vector3(...positions.slice(0, 3))
       .applyAxisAngle(new Vector3(0, 1, 0), 0.8)
       .project(camera);
-    expect(findQueryNode(positions, 0.8, point.x, point.y, view)).toBe(0);
-    expect(findQueryNode(positions, 0.8, -0.95, -0.95, view)).toBe(-1);
+    expect(findQueryNode(positions, 0.8, point, view)).toBe(0);
+    expect(findQueryNode(positions, 0.8, { x: -0.95, y: -0.95 }, view)).toBe(
+      -1,
+    );
   });
   it("rejects hidden particles when projection places them behind the camera", () => {
-    expect(findQueryNode(new Float32Array([0, 0, 8]), 0, 0, 0, view)).toBe(-1);
+    expect(
+      findQueryNode(new Float32Array([0, 0, 8]), 0, { x: 0, y: 0 }, view),
+    ).toBe(-1);
   });
 });
 describe("stepNetworkFrame", () => {
@@ -67,7 +71,12 @@ describe("stepNetworkFrame", () => {
       velocities: n.buffers.velocities.slice(),
     };
     stepParticles(expected, { x: 1e6, y: 1e6 }, 1 / 60);
-    stepNetworkFrame(n, idle(), false, "always", view, 1 / 60);
+    stepNetworkFrame(n, idle(), {
+      isDark: false,
+      frameLoop: "always",
+      view,
+      elapsed: 1 / 60,
+    });
     expect(n.buffers.positions).toEqual(expected.positions);
     expect(n.rotation).toBeCloseTo(n.time * ROTATION_SPEED);
     expect(n.edgePositions).toBe(n.buffers.positions);
@@ -77,7 +86,12 @@ describe("stepNetworkFrame", () => {
     const n = createNetworkState(false),
       input = idle();
     for (let i = 0; i < 240; i++)
-      stepNetworkFrame(n, input, false, "always", view, 1 / 60);
+      stepNetworkFrame(n, input, {
+        isDark: false,
+        frameLoop: "always",
+        view,
+        elapsed: 1 / 60,
+      });
     const frozen = () => ({
       buffers: n.buffers,
       time: n.time,
@@ -87,7 +101,12 @@ describe("stepNetworkFrame", () => {
     });
     const before = JSON.stringify(frozen());
     input.pendingClick = true;
-    stepNetworkFrame(n, input, true, "demand", view, 100);
+    stepNetworkFrame(n, input, {
+      isDark: true,
+      frameLoop: "demand",
+      view,
+      elapsed: 100,
+    });
     expect(JSON.stringify(frozen())).toBe(before);
     expect(n.palette.node).toEqual(new Color(PALETTE.dark.node));
     expect(n.palette.signal).toEqual(new Color(PALETTE.dark.signal));
@@ -118,7 +137,12 @@ describe("stepNetworkFrame", () => {
           pendingClick: true,
         });
       }
-      stepNetworkFrame(n, input, frame > 400, "always", view, 1 / 60);
+      stepNetworkFrame(n, input, {
+        isDark: frame > 400,
+        frameLoop: "always",
+        view,
+        elapsed: 1 / 60,
+      });
       if (frame < 300 && n.activity.values.some((v) => v > 0))
         idleWasActive = true;
       if (frame === 300) {
@@ -215,7 +239,12 @@ describe("pointer push while the cloud keeps turning", () => {
       const cursor = { x: 0.2, y: 0.1 };
       const input = { ...idle(), inside: true, ...cursor };
       for (let frame = 0; frame < 90; frame++)
-        stepNetworkFrame(n, input, false, "always", view, 1 / 60);
+        stepNetworkFrame(n, input, {
+          isDark: false,
+          frameLoop: "always",
+          view,
+          elapsed: 1 / 60,
+        });
       const near = meanDisplacement(n, cursor, true);
       const far = meanDisplacement(n, cursor, false);
       expect(near).toBeGreaterThan(far * 5);
@@ -243,7 +272,12 @@ describe("pointer push while the cloud keeps turning", () => {
       inside: true,
       pendingClick: true,
     };
-    stepNetworkFrame(n, input, true, "always", view, 1 / 60);
+    stepNetworkFrame(n, input, {
+      isDark: true,
+      frameLoop: "always",
+      view,
+      elapsed: 1 / 60,
+    });
     expect(n.activity.hops.some((hop) => hop === 0)).toBe(true);
   });
 });

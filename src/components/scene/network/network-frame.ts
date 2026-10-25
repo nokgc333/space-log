@@ -26,11 +26,11 @@ export type NetworkView = {
 export function findQueryNode(
   positions: Float32Array,
   rotation: number,
-  px: number,
-  py: number,
+  pointer: { x: number; y: number },
   view: NetworkView,
 ): number {
   const { matrix: m, width, height } = view;
+  const { x: px, y: py } = pointer;
   const c = Math.cos(rotation),
     s = Math.sin(rotation);
   let nearest = -1,
@@ -84,7 +84,7 @@ export function createNetworkState(isDark: boolean) {
   updateBuffers(network);
   return network;
 }
-type NetworkState = ReturnType<typeof createNetworkState>;
+export type NetworkState = ReturnType<typeof createNetworkState>;
 
 export function signalMix(value: number): number {
   return value ** S.SIGNAL_CURVE;
@@ -104,62 +104,94 @@ function updateBuffers(n: NetworkState): void {
   }
 }
 
-export function stepNetworkFrame(
+export type FrameContext = {
+  isDark: boolean;
+  frameLoop: FrameLoop;
+  view: NetworkView;
+  elapsed: number;
+};
+
+function blendPalette(
   n: NetworkState,
-  input: NetworkInput,
-  isDark: boolean,
-  frameLoop: FrameLoop,
-  view: NetworkView,
-  elapsed: number,
+  { isDark, frameLoop }: FrameContext,
+  delta: number,
 ): void {
   const theme = S.PALETTE[isDark ? "dark" : "light"];
   n.targets.node.set(theme.node);
   n.targets.signal.set(theme.signal);
-  const delta = Math.min(Math.max(elapsed, 0), S.MAX_STEP_SECONDS);
   const ease =
     frameLoop === "demand" ? 1 : 1 - Math.exp(-S.COLOR_RESPONSE * delta);
   n.palette.node.lerp(n.targets.node, ease);
   n.palette.signal.lerp(n.targets.signal, ease);
-  if (frameLoop === "always" && delta > 0) {
-    n.time += delta;
-    n.rotation = n.time * S.ROTATION_SPEED;
-    if (input.inside) {
-      const local = pointerToLocal(
-        (input.x * view.worldWidth) / 2,
-        (input.y * view.worldHeight) / 2,
-        n.rotation,
-      );
-      n.pointer.x = local.x;
-      n.pointer.y = local.y;
-      n.pointer.z = local.z;
-    } else {
-      n.pointer.x = n.pointer.y = 1e6;
-      n.pointer.z = 0;
-    }
-    stepParticles(n.buffers, n.pointer, n.time);
-    const query = input.inside
-      ? findQueryNode(n.buffers.positions, n.rotation, input.x, input.y, view)
-      : -1;
-    if (input.pendingClick) {
-      const seed = findQueryNode(
-        n.buffers.positions,
-        n.rotation,
-        input.clickX,
-        input.clickY,
-        view,
-      );
-      startPulse(n.activity, n.graph, seed);
-    } else if (
-      n.time >= n.nextPulse &&
-      n.activity.age < 0 &&
-      n.graph.edges.length
-    ) {
-      const seed =
-        n.graph.edges[Math.floor(Math.random() * n.graph.edges.length)];
-      startPulse(n.activity, n.graph, seed, S.IDLE_PULSE_STRENGTH);
-    }
-    if (n.activity.age === 0) n.nextPulse = n.time + S.IDLE_PULSE_INTERVAL;
-    stepActivity(n.activity, n.graph, delta, query);
+}
+
+function aimPointer(
+  n: NetworkState,
+  input: NetworkInput,
+  view: NetworkView,
+): void {
+  if (!input.inside) {
+    n.pointer.x = n.pointer.y = 1e6;
+    n.pointer.z = 0;
+    return;
+  }
+  const local = pointerToLocal(
+    (input.x * view.worldWidth) / 2,
+    (input.y * view.worldHeight) / 2,
+    n.rotation,
+  );
+  n.pointer.x = local.x;
+  n.pointer.y = local.y;
+  n.pointer.z = local.z;
+}
+
+function startPulses(
+  n: NetworkState,
+  input: NetworkInput,
+  view: NetworkView,
+): void {
+  if (input.pendingClick) {
+    const click = { x: input.clickX, y: input.clickY };
+    const seed = findQueryNode(n.buffers.positions, n.rotation, click, view);
+    startPulse(n.activity, n.graph, seed);
+  } else if (
+    n.time >= n.nextPulse &&
+    n.activity.age < 0 &&
+    n.graph.edges.length
+  ) {
+    const seed =
+      n.graph.edges[Math.floor(Math.random() * n.graph.edges.length)];
+    startPulse(n.activity, n.graph, seed, S.IDLE_PULSE_STRENGTH);
+  }
+  if (n.activity.age === 0) n.nextPulse = n.time + S.IDLE_PULSE_INTERVAL;
+}
+
+function advance(
+  n: NetworkState,
+  input: NetworkInput,
+  view: NetworkView,
+  delta: number,
+): void {
+  n.time += delta;
+  n.rotation = n.time * S.ROTATION_SPEED;
+  aimPointer(n, input, view);
+  stepParticles(n.buffers, n.pointer, n.time);
+  const query = input.inside
+    ? findQueryNode(n.buffers.positions, n.rotation, input, view)
+    : -1;
+  startPulses(n, input, view);
+  stepActivity(n.activity, n.graph, delta, query);
+}
+
+export function stepNetworkFrame(
+  n: NetworkState,
+  input: NetworkInput,
+  frame: FrameContext,
+): void {
+  const delta = Math.min(Math.max(frame.elapsed, 0), S.MAX_STEP_SECONDS);
+  blendPalette(n, frame, delta);
+  if (frame.frameLoop === "always" && delta > 0) {
+    advance(n, input, frame.view, delta);
   }
   input.pendingClick = false;
   updateBuffers(n);
