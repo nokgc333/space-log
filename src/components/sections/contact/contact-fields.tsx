@@ -19,9 +19,9 @@ type FieldProps = {
 
 const LABEL = "font-mono text-xs tracking-widest";
 const INPUT =
-  "mt-2 w-full border border-control bg-surface px-3 py-2 outline-none focus:border-ink";
+  "mt-2 w-full border border-control bg-surface px-3 py-2 focus:border-ink";
 const SELECT =
-  "w-full appearance-none border border-control bg-surface px-3 py-2 pr-10 outline-none focus:border-ink";
+  "w-full appearance-none border border-control bg-surface px-3 py-2 pr-10 focus:border-ink";
 
 const fieldId = (name: Name) => `contact-${name}`;
 const errorId = (name: Name) => `contact-${name}-error`;
