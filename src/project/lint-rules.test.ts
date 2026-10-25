@@ -19,6 +19,7 @@ describe("complexity rules", () => {
       "function length",
       /"max-lines-per-function":\s*\[\s*"error",\s*\{\s*max:\s*80/,
     ],
+    ["file length", /"max-lines":\s*\["error",\s*200\]/],
     ["nesting depth", /"max-depth":\s*\["error",\s*4\]/],
     ["parameter count", /"max-params":\s*\["error",\s*4\]/],
   ])("limits the %s as an error", (_name, pattern) => {
