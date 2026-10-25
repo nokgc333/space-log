@@ -1,0 +1,17 @@
+{
+  "required_status_checks": {
+    "strict": false,
+    "contexts": [
+      "Lint, typecheck, format, unit test, build",
+      "E2E",
+      "Dependency Audit",
+      "CodeQL"
+    ]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null,
+  "required_linear_history": false,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
