@@ -5,10 +5,13 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { PolicyDocument } from "@/components/privacy/policy-document";
 import { privacy, site } from "@/lib/content";
+import { PRIVACY_PATH } from "@/lib/routes";
+import { buildPageMetadata } from "@/lib/seo/site-metadata";
 
-export const metadata: Metadata = {
-  title: `${privacy.title} | ${site.name}`,
-};
+export const metadata: Metadata = buildPageMetadata(site, {
+  title: privacy.title,
+  path: PRIVACY_PATH,
+});
 
 export default function PrivacyPage() {
   return (
