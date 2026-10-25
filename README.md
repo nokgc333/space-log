@@ -38,7 +38,7 @@ Contact:
 ## Stack
 
 - **Framework:** Next.js 16 (App Router, Turbopack) and React 19.
-- **Language:** TypeScript 5 in strict mode, for typed props, typed content and typed form values.
+- **Language:** TypeScript 6 in strict mode, for typed props, typed content and typed form values.
 - **Styling:** Tailwind CSS v4 and `next-themes`.
 - **Fonts:** IBM Plex Sans Condensed, IBM Plex Mono and IBM Plex Sans JP.
 - **3D:** three.js and React Three Fiber, for the hero point cloud and its network of signals.
@@ -59,6 +59,14 @@ Contact:
 - `npm run build`: build for production.
 - `npm run test:e2e`: build, start on port 3100 and run Playwright.
 - `npm run test:perf`: run Lighthouse CI against a production build (run `npm run build` first) and fail when a performance budget is exceeded.
+
+## Dependencies
+
+A few packages are kept behind the latest major version on purpose:
+
+- `eslint` 9: the React, JSX accessibility and import plugins that Next.js bundles do not accept ESLint 10 yet.
+- `typescript` 6.0: `typescript-eslint` does not accept TypeScript 6.1 or newer yet.
+- `@types/node` 24: the types follow the Node 24 runtime.
 
 ## Content
 

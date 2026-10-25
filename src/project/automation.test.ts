@@ -71,6 +71,10 @@ describe("Dependabot", () => {
     }
     expect(config).toContain("version-update:semver-major");
   });
+
+  it("does not propose a TypeScript version that typescript-eslint does not support yet", () => {
+    expect(config).toMatch(/typescript\s+versions: \[">=6\.1\.0"\]/);
+  });
 });
 
 describe("pre-commit checks", () => {
