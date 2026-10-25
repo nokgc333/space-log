@@ -49,6 +49,23 @@
     background: var(--ink);
     color: var(--surface);
   }
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --muted: #3d3d3d;
+    --rule: #595959;
+    --control: #4d4d4d;
+  }
+  .dark {
+    --muted: #c8c8c8;
+    --rule: #8a8a8a;
+    --control: #a3a3a3;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

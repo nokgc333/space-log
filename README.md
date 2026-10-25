@@ -91,6 +91,7 @@ Put them in `.env.local` (git-ignored) for local use, or in the host's environme
 
 Lighthouse accessibility is 100 for the home page and the privacy page, in both themes.
 The site works with the keyboard only (skip link, menu, stage buttons, table paging, form), and smooth scrolling and other animation follow the reduced-motion setting.
+Every Tab stop shows the same 2 px focus ring (checked in both themes and under forced colors), and the quiet text and borders get darker when the visitor asks for more contrast.
 
 ## Performance
 
