@@ -51,6 +51,26 @@ test.describe("security headers", () => {
 
     expect(problems).toEqual([]);
   });
+
+  test("do not block anything the privacy policy needs", async ({ page }) => {
+    const problems: string[] = [];
+    await page.addInitScript(() => {
+      window.addEventListener("securitypolicyviolation", (event) => {
+        console.error(
+          `CSP ${event.violatedDirective} blocked ${event.blockedURI}`,
+        );
+      });
+    });
+    page.on("console", (message) => {
+      if (message.type() === "error") problems.push(message.text());
+    });
+    page.on("pageerror", (error) => problems.push(error.message));
+
+    await page.goto("/privacy");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+    expect(problems).toEqual([]);
+  });
 });
 
 test.describe("the contact form under the policy", () => {
