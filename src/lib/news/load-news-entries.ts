@@ -42,10 +42,11 @@ function readEntry(dir: string, file: string): NewsEntry {
 }
 
 export function loadNewsEntries(dir: string = NEWS_DIR): NewsEntry[] {
-  if (!fs.existsSync(dir)) throw new Error(`news folder not found: ${dir}`);
+  if (!fs.existsSync(/*turbopackIgnore: true*/ dir))
+    throw new Error(`news folder not found: ${dir}`);
 
   const entries = fs
-    .readdirSync(dir)
+    .readdirSync(/*turbopackIgnore: true*/ dir)
     .filter((file) => file.endsWith(".md"))
     .sort()
     .map((file) => readEntry(dir, file));
