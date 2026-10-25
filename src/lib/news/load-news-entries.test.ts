@@ -127,4 +127,16 @@ describe("loadNewsEntries", () => {
     const entries = loadNewsEntries();
     expect(entries.length).toBeGreaterThan(0);
   });
+
+  it("names the file when its front matter is not valid YAML", () => {
+    write("2026-01-01-broken.md", "---\ndate: [unclosed\n---\n");
+    expect(() => loadNewsEntries(dir)).toThrow(/2026-01-01-broken\.md/);
+  });
+
+  it("names the file when it has no front matter at all", () => {
+    write("2026-01-01-plain.md", "Just text\n");
+    expect(() => loadNewsEntries(dir)).toThrow(
+      /2026-01-01-plain\.md.*no frontmatter/,
+    );
+  });
 });

@@ -265,5 +265,30 @@ describe("submitContact", () => {
         kind: "rate-limited",
       });
     });
+
+    it("reports a failure without a message when the network error is not an Error", async () => {
+      withMailSettings();
+      fetchMock.mockRejectedValue("offline");
+      const submitContact = await loadAction();
+      expect(await submitContact(VALID)).toEqual({ ok: false, kind: "failed" });
+      expect(JSON.stringify(errorLog.mock.calls)).toContain("Mail failed");
+    });
+  });
+
+  describe("with settings that cannot be read as text", () => {
+    it("reports a failure with a general message when something other than an Error is thrown", async () => {
+      vi.resetModules();
+      vi.doMock("@/lib/contact/mail-config", () => ({
+        resolveMailConfig: () => {
+          throw "broken";
+        },
+      }));
+      const { submitContact } = await import("./submit-contact");
+      expect(await submitContact(VALID)).toEqual({ ok: false, kind: "failed" });
+      expect(JSON.stringify(errorLog.mock.calls)).toContain(
+        "Mail settings failed",
+      );
+      vi.doUnmock("@/lib/contact/mail-config");
+    });
   });
 });
