@@ -105,7 +105,12 @@ describe("PrivacyPage", () => {
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
   });
 
-  it("names the page after the policy and the site", () => {
-    expect(metadata.title).toBe(`${privacy.title} | ${site.name}`);
+  it("names the page after the policy, leaving the site name to the title template", () => {
+    expect(metadata.title).toBe(privacy.title);
+  });
+
+  it("declares its own canonical path and a link preview titled with the site name", () => {
+    expect(metadata.alternates?.canonical).toBe("/privacy");
+    expect(metadata.openGraph?.title).toBe(`${privacy.title} | ${site.name}`);
   });
 });

@@ -100,6 +100,12 @@ Measured on a production build in Chrome on an Apple M2 (1440×900):
 
 Performance budgets are checked on every pull request (`.lighthouserc.cjs`, the Performance Budget job): mobile score, LCP, JavaScript and total transfer size for each page, plus layout shift and blocking time. The budgets are the measured values plus a margin, and are lowered when a change makes the pages lighter.
 
+## Search and sharing
+
+- `robots.txt` lets crawlers in only on the production deployment (`VERCEL_ENV=production`); previews and local runs disallow everything and list no sitemap. `sitemap.xml` lists the home page and the privacy policy.
+- Every page declares its canonical URL, a title (`page | site name`) and link preview tags; the home page also carries a `WebSite` description as JSON-LD.
+- The link preview image, the favicon and the Apple touch icon are generated from the site mark and colors (`src/app/opengraph-image.tsx`, `icon.tsx`, `apple-icon.tsx`); the browser bar color follows the light or dark theme.
+
 ## Security
 
 - Response headers:
