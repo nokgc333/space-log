@@ -27,8 +27,14 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run format:check
-      - run: npm run test
+      - run: npm run test:coverage
       - run: npm run build
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
 
   e2e:
     name: E2E

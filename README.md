@@ -55,6 +55,7 @@ Contact:
 
 - `npm run dev`: start the development server.
 - `npm run check`: lint, typecheck, format check and unit tests.
+- `npm run test:coverage`: unit tests with coverage; fails when statements, branches, functions or lines fall below 95% (the CI runs this; `src/app/fonts.ts` and `src/app/layout.tsx` are left out because the end-to-end tests check them).
 - `npm run build`: build for production.
 - `npm run test:e2e`: build, start on port 3100 and run Playwright.
 - `npm run test:perf`: run Lighthouse CI against a production build (run `npm run build` first) and fail when a performance budget is exceeded.
