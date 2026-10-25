@@ -39,6 +39,7 @@
   "devDependencies": {
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.64.0",
+    "@react-three/test-renderer": "^9.1.1",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.7",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.2",

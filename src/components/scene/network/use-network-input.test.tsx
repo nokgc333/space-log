@@ -66,4 +66,27 @@ describe("useNetworkInput", () => {
     source.current.dispatchEvent(new MouseEvent("click"));
     expect(result.current.current.pendingClick).toBe(false);
   });
+
+  it("ignores a click while the section has no size to measure against", () => {
+    const current = document.createElement("section");
+    vi.spyOn(current, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, 0, 0),
+    );
+    const { result, unmount } = renderHook(() =>
+      useNetworkInput({ current }, true),
+    );
+    act(() => current.dispatchEvent(new MouseEvent("click")));
+    expect(result.current.current.pendingClick).toBe(false);
+    unmount();
+  });
+
+  it("does not count a click on a link, a button or a form field", () => {
+    const source = sectionSource();
+    const button = document.createElement("button");
+    source.current.append(button);
+    const { result, unmount } = renderHook(() => useNetworkInput(source, true));
+    act(() => button.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(result.current.current.pendingClick).toBe(false);
+    unmount();
+  });
 });

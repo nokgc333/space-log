@@ -31,4 +31,20 @@ describe("HeroSection", () => {
       "full",
     );
   });
+
+  it("reports reduced motion when the visitor asked for less", () => {
+    const original = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    render(<HeroSection hero={hero} />);
+    expect(document.getElementById("hero")).toHaveAttribute(
+      "data-motion",
+      "reduced",
+    );
+    window.matchMedia = original;
+  });
 });

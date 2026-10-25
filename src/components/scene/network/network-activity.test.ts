@@ -55,4 +55,21 @@ describe("startPulse", () => {
     expect(state.values[2]).toBeGreaterThan(0.4);
     expect(state.values[2]).toBeLessThanOrEqual(0.5);
   });
+
+  describe("edge cases", () => {
+    it("ignores a ripple that starts from a particle that does not exist", () => {
+      const state = createActivityState(4);
+      startPulse(state, graph, 4);
+      startPulse(state, graph, -1);
+      expect(state.age).toBe(-1);
+    });
+    it("changes nothing when no time has passed", () => {
+      const state = createActivityState(4);
+      startPulse(state, graph, 0);
+      const hops = Array.from(state.hops);
+      stepActivity(state, graph, 0, -1);
+      expect(Array.from(state.hops)).toEqual(hops);
+      expect(state.age).toBe(0);
+    });
+  });
 });

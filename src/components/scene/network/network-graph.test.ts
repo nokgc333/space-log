@@ -71,4 +71,14 @@ describe("buildNetworkGraph", () => {
       expect(fingerprint(graph.neighbors)).toBe(neighbors);
     },
   );
+
+  it("links the lower-numbered particle first when two are equally near", () => {
+    const graph = buildNetworkGraph(
+      new Float32Array([0, 0, 0, 0.1, 0, 0, -0.1, 0, 0]),
+      0.2,
+      1,
+    );
+    expect(Array.from(graph.edges)).toEqual([0, 1]);
+    expect(Array.from(graph.neighbors)).toEqual([1, 0]);
+  });
 });
