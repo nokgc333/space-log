@@ -1,7 +1,7 @@
 import type { FieldErrors, FieldValues, Resolver } from "react-hook-form";
-import type { z } from "zod";
+import type * as z from "zod/mini";
 
-export function schemaResolver<Schema extends z.ZodType<FieldValues>>(
+export function schemaResolver<Schema extends z.ZodMiniType<FieldValues>>(
   schema: Schema,
 ): Resolver<z.infer<Schema>> {
   return async (values) => {

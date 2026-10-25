@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 
 import type { ContactMessages } from "@/lib/content";
 
@@ -14,28 +14,35 @@ export function buildContactSchema(
   messages: ContactMessages,
   topicValues: readonly string[],
 ) {
-  const shortText = z
-    .string()
-    .trim()
-    .max(MAX_SHORT_TEXT, messages.tooLong)
-    .regex(SINGLE_LINE_PATTERN, messages.singleLine);
+  const shortText = (...extra: z.core.$ZodCheck<string>[]) =>
+    z
+      .string()
+      .check(
+        z.trim(),
+        z.maxLength(MAX_SHORT_TEXT, messages.tooLong),
+        z.regex(SINGLE_LINE_PATTERN, messages.singleLine),
+        ...extra,
+      );
 
   return z.object({
-    name: shortText.min(1, messages.required),
-    email: shortText
-      .min(1, messages.required)
-      .regex(EMAIL_PATTERN, messages.email),
-    company: shortText,
+    name: shortText(z.minLength(1, messages.required)),
+    email: shortText(
+      z.minLength(1, messages.required),
+      z.regex(EMAIL_PATTERN, messages.email),
+    ),
+    company: shortText(),
     topic: z
       .string()
-      .refine((value) => topicValues.includes(value), messages.choose),
+      .check(z.refine((value) => topicValues.includes(value), messages.choose)),
     message: z
       .string()
-      .trim()
-      .min(1, messages.required)
-      .max(MAX_LONG_TEXT, messages.tooLong),
-    consent: z.boolean().refine((value) => value, messages.consent),
-    website: z.string().max(MAX_TRAP_TEXT).default(""),
+      .check(
+        z.trim(),
+        z.minLength(1, messages.required),
+        z.maxLength(MAX_LONG_TEXT, messages.tooLong),
+      ),
+    consent: z.boolean().check(z.refine((value) => value, messages.consent)),
+    website: z._default(z.string().check(z.maxLength(MAX_TRAP_TEXT)), ""),
   });
 }
 
