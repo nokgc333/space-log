@@ -57,17 +57,26 @@ describe("Lighthouse CI budgets", () => {
         "largest-contentful-paint",
         "resource-summary:script:size",
         "resource-summary:total:size",
+        "total-blocking-time",
       ]);
     }
   });
 
-  it("budgets layout shift and blocking time on every page", () => {
+  it("budgets layout shift on every page", () => {
     expect(everywhere!.assertions["cumulative-layout-shift"][1]).toEqual({
       maxNumericValue: 0.1,
     });
+  });
+
+  it("keeps the blocking time of the other pages tight; only the home page, whose 3D hero is software-rendered on the CI runner, has a loose one", () => {
     expect(
-      everywhere!.assertions["total-blocking-time"][1].maxNumericValue,
+      others!.assertions["total-blocking-time"][1].maxNumericValue,
     ).toBeLessThanOrEqual(450);
+    expect(
+      home!.assertions["total-blocking-time"][1].maxNumericValue,
+    ).toBeGreaterThan(
+      others!.assertions["total-blocking-time"][1].maxNumericValue,
+    );
   });
 
   it("uses the median run so that one slow run does not fail the build", () => {

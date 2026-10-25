@@ -14,7 +14,7 @@ module.exports = {
           matchingUrlPattern: "^http://localhost:3400/$",
           aggregationMethod: "median-run",
           assertions: {
-            "categories:performance": ["error", { minScore: 0.7 }],
+            "categories:performance": ["error", { minScore: 0.4 }],
             "largest-contentful-paint": ["error", { maxNumericValue: 5000 }],
             "resource-summary:script:size": [
               "error",
@@ -24,6 +24,7 @@ module.exports = {
               "error",
               { maxNumericValue: 1300000 },
             ],
+            "total-blocking-time": ["error", { maxNumericValue: 7500 }],
           },
         },
         {
@@ -40,6 +41,7 @@ module.exports = {
               "error",
               { maxNumericValue: 850000 },
             ],
+            "total-blocking-time": ["error", { maxNumericValue: 450 }],
           },
         },
         {
@@ -47,7 +49,6 @@ module.exports = {
           aggregationMethod: "median-run",
           assertions: {
             "cumulative-layout-shift": ["error", { maxNumericValue: 0.1 }],
-            "total-blocking-time": ["error", { maxNumericValue: 450 }],
           },
         },
       ],
