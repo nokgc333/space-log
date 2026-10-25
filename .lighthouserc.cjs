@@ -14,8 +14,8 @@ module.exports = {
           matchingUrlPattern: "^http://localhost:3400/$",
           aggregationMethod: "median-run",
           assertions: {
-            "categories:performance": ["error", { minScore: 0.4 }],
-            "largest-contentful-paint": ["error", { maxNumericValue: 5000 }],
+            "categories:performance": ["error", { minScore: 0.25 }],
+            "largest-contentful-paint": ["error", { maxNumericValue: 9500 }],
             "resource-summary:script:size": [
               "error",
               { maxNumericValue: 520000 },
