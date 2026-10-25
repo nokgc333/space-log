@@ -57,6 +57,7 @@ Contact:
 - `npm run check`: lint, typecheck, format check and unit tests.
 - `npm run build`: build for production.
 - `npm run test:e2e`: build, start on port 3100 and run Playwright.
+- `npm run test:perf`: run Lighthouse CI against a production build (run `npm run build` first) and fail when a performance budget is exceeded.
 
 ## Content
 
@@ -96,6 +97,8 @@ Measured on a production build in Chrome on an Apple M2 (1440×900):
 
 - 59–61 fps and no long tasks with the hero on screen, while the pointer moves over it, and scrolled down to the tools table, in both themes.
 - Lighthouse: Performance 99–100 in repeated runs (the first run after a cold start scored lower), Best Practices 100, SEO 100.
+
+Performance budgets are checked on every pull request (`.lighthouserc.cjs`, the Performance Budget job): mobile score, LCP, JavaScript and total transfer size for each page, plus layout shift and blocking time. The budgets are the measured values plus a margin, and are lowered when a change makes the pages lighter.
 
 ## Security
 

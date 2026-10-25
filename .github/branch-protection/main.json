@@ -4,6 +4,7 @@
     "contexts": [
       "Lint, typecheck, format, unit test, build",
       "E2E",
+      "Performance Budget",
       "Dependency Audit",
       "CodeQL"
     ]
