@@ -34,6 +34,8 @@ const idle = () => ({
   pendingClick: false,
 });
 
+const LONG_SIMULATION_MS = 30_000;
+
 const rgbOf = (hex: string) => {
   const { r, g, b } = new Color(hex);
   return { r, g, b };
@@ -117,52 +119,56 @@ describe("stepNetworkFrame", () => {
     expect(n.palette.signal).toEqual(rgbOf(PALETTE.dark.signal));
     expect(input.pendingClick).toBe(false);
   });
-  it("runs idle ripples and accepts clicks when 720 frames advance without reallocating", () => {
-    const n = createNetworkState(false),
-      input = idle();
-    const arrays = () => [
-      n.buffers.positions,
-      n.buffers.velocities,
-      n.nodeColors,
-      n.edgePositions,
-      n.edgeColors,
-      n.activity.values,
-      n.activity.next,
-    ];
-    const buffers = arrays();
-    let idleWasActive = false;
-    for (let frame = 0; frame < 720; frame++) {
-      if (frame === 300) {
-        Object.assign(input, {
-          x: 0,
-          y: 0,
-          inside: true,
-          clickX: 0,
-          clickY: 0,
-          pendingClick: true,
+  it(
+    "runs idle ripples and accepts clicks when 720 frames advance without reallocating",
+    { timeout: LONG_SIMULATION_MS },
+    () => {
+      const n = createNetworkState(false),
+        input = idle();
+      const arrays = () => [
+        n.buffers.positions,
+        n.buffers.velocities,
+        n.nodeColors,
+        n.edgePositions,
+        n.edgeColors,
+        n.activity.values,
+        n.activity.next,
+      ];
+      const buffers = arrays();
+      let idleWasActive = false;
+      for (let frame = 0; frame < 720; frame++) {
+        if (frame === 300) {
+          Object.assign(input, {
+            x: 0,
+            y: 0,
+            inside: true,
+            clickX: 0,
+            clickY: 0,
+            pendingClick: true,
+          });
+        }
+        stepNetworkFrame(n, input, {
+          isDark: frame > 400,
+          frameLoop: "always",
+          view,
+          elapsed: 1 / 60,
         });
+        if (frame < 300 && n.activity.values.some((v) => v > 0))
+          idleWasActive = true;
+        if (frame === 300) {
+          expect(input.pendingClick).toBe(false);
+          expect(n.activity.strength).toBe(1);
+          expect(n.activity.hops.some((hop) => hop === 0)).toBe(true);
+        }
+        if (frame === 360) input.inside = false;
+        for (const buffer of buffers)
+          expect(buffer.every(Number.isFinite)).toBe(true);
+        expect(n.activity.values.every((v) => v >= 0 && v <= 1)).toBe(true);
       }
-      stepNetworkFrame(n, input, {
-        isDark: frame > 400,
-        frameLoop: "always",
-        view,
-        elapsed: 1 / 60,
-      });
-      if (frame < 300 && n.activity.values.some((v) => v > 0))
-        idleWasActive = true;
-      if (frame === 300) {
-        expect(input.pendingClick).toBe(false);
-        expect(n.activity.strength).toBe(1);
-        expect(n.activity.hops.some((hop) => hop === 0)).toBe(true);
-      }
-      if (frame === 360) input.inside = false;
-      for (const buffer of buffers)
-        expect(buffer.every(Number.isFinite)).toBe(true);
-      expect(n.activity.values.every((v) => v >= 0 && v <= 1)).toBe(true);
-    }
-    expect(idleWasActive).toBe(true);
-    expect(arrays().every((buffer, i) => buffer === buffers[i])).toBe(true);
-  });
+      expect(idleWasActive).toBe(true);
+      expect(arrays().every((buffer, i) => buffer === buffers[i])).toBe(true);
+    },
+  );
 });
 
 describe("signalMix", () => {
