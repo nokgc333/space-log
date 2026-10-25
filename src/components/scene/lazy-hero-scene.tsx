@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { type RefObject, useRef } from "react";
 
-import { useIsMounted } from "@/components/ui/use-is-mounted";
+import { useAfterIdle } from "@/components/ui/use-after-idle";
 import { usePrefersReducedMotion } from "@/components/ui/use-prefers-reduced-motion";
 
 import { SceneBoundary } from "./scene-boundary";
@@ -22,7 +22,7 @@ type Props = {
 
 export function LazyHeroScene({ label, fallbackText, eventSource }: Props) {
   const container = useRef<HTMLDivElement>(null);
-  const isMounted = useIsMounted();
+  const isIdle = useAfterIdle();
   const prefersReducedMotion = usePrefersReducedMotion();
   const { isInView, isDocumentVisible } = useSceneVisibility(container);
   const fallback = (
@@ -36,7 +36,7 @@ export function LazyHeroScene({ label, fallbackText, eventSource }: Props) {
       aria-label={label}
       className="absolute inset-0"
     >
-      {isMounted ? (
+      {isIdle ? (
         <SceneBoundary fallback={fallback}>
           <HeroScene
             eventSource={eventSource}
