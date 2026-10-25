@@ -21,6 +21,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:perf": "lhci autorun",
     "prepare": "husky",
     "secrets:check": "secretlint \"**/*\" --secretlintignore .secretlintignore"
   },
@@ -36,6 +37,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.64.0",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.7",
     "@tailwindcss/postcss": "^4",
