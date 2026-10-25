@@ -111,6 +111,7 @@ Performance budgets are checked on every pull request (`.lighthouserc.cjs`, the 
 
 - Response headers:
   Content-Security-Policy, Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy.(The `X-Powered-By` header is off.)
+- The `script-src` of the Content-Security-Policy keeps `'unsafe-inline'`: removing it needs a per-request nonce, which makes every page dynamic (no CDN cache, about 4 times the response time in a local measurement). The pages show no user input, and everything else in the policy stays strict.
 - The contact form validates on the client and again on the server, rejects control characters in single-line fields, has a hidden trap field, and allows 5 sends per visitor per 10 minutes.
 - `npm audit --omit=dev` reports no vulnerabilities in the production dependencies.
 - The site sets no cookies and stores only the chosen theme in the browser.
