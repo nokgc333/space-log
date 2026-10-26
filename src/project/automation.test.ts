@@ -77,6 +77,24 @@ describe("Dependabot", () => {
   });
 });
 
+describe("the end-to-end job", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const e2e = ci.slice(ci.indexOf("  e2e:"), ci.indexOf("  performance:"));
+  const SLOW_MIRROR_MINUTES = 25;
+
+  it("allows time for a slow package mirror, which once took 14 minutes to deliver 20 MB, while the tests take about one", () => {
+    const limit = Number(/timeout-minutes:\s*(\d+)/.exec(e2e)?.[1]);
+
+    expect(limit).toBeGreaterThanOrEqual(SLOW_MIRROR_MINUTES);
+  });
+
+  it("bounds the browser installation on its own, so a stuck download is named in the log", () => {
+    expect(e2e).toMatch(
+      /timeout-minutes:\s*\d+\s*\n\s+run: npx playwright install --with-deps chromium/,
+    );
+  });
+});
+
 describe("pre-push checks", () => {
   it("runs the quick checks (lint, types, format, unit tests) before every push", () => {
     expect(read(".husky/pre-push")).toContain("npm run check");
