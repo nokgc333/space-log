@@ -270,9 +270,10 @@ Performance budgets are checked on every pull request (`.lighthouserc.cjs`, the 
 
 1. Import the repository in Vercel; the framework is detected as Next.js.
 2. Optionally set the three mail variables for Production and Preview (see "Environment variables").
-3. `main` is the production branch. Every pull request gets a preview, and previews are kept out of search results.
-4. Work happens on `develop`; open a pull request into `main` and merge it with a merge commit once all checks pass. The deployment to production follows the merge.
-5. The branch protection is kept as files in `.github/branch-protection/` and applied by the repository owner:
+3. In Settings, Deployment Protection, turn off Protected Source Maps. The production build publishes its source maps (the code is public anyway), and this Vercel setting is not part of the repository: while it is on, the maps answer 403.
+4. `main` is the production branch. Every pull request gets a preview, and previews are kept out of search results.
+5. Work happens on `develop`; open a pull request into `main` and merge it with a merge commit once all checks pass. The deployment to production follows the merge.
+6. The branch protection is kept as files in `.github/branch-protection/` and applied by the repository owner:
 
    ```bash
    gh api -X PUT repos/<owner>/<repo>/branches/main/protection --input .github/branch-protection/main.json
