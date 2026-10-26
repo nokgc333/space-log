@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { site } from "@/lib/content";
+
 import robots from "./robots";
 
 afterEach(() => {
@@ -12,7 +14,7 @@ describe("robots", () => {
 
     expect(robots()).toEqual({
       rules: { userAgent: "*", allow: "/" },
-      sitemap: "https://space-log.vercel.app/sitemap.xml",
+      sitemap: `${site.url}/sitemap.xml`,
     });
   });
 

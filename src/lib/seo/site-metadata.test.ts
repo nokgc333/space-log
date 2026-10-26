@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildPageMetadata, buildSiteMetadata } from "./site-metadata";
 
 const site = {
-  name: "space-log",
+  name: "Example Studio",
   description: "A fictional studio.",
   url: "https://example.test",
 };
@@ -17,8 +17,8 @@ describe("buildSiteMetadata", () => {
 
   it("uses the site name alone for the home page and as a suffix for other pages", () => {
     expect(metadata.title).toEqual({
-      default: "space-log",
-      template: "%s | space-log",
+      default: "Example Studio",
+      template: "%s | Example Studio",
     });
   });
 
@@ -29,15 +29,15 @@ describe("buildSiteMetadata", () => {
   it("describes the page for link previews and keeps the Twitter card in step", () => {
     expect(metadata.openGraph).toMatchObject({
       type: "website",
-      siteName: "space-log",
-      title: "space-log",
+      siteName: "Example Studio",
+      title: "Example Studio",
       description: "A fictional studio.",
       url: "/",
       locale: "ja_JP",
     });
     expect(metadata.twitter).toMatchObject({
       card: "summary_large_image",
-      title: "space-log",
+      title: "Example Studio",
       description: "A fictional studio.",
     });
   });
@@ -57,8 +57,8 @@ describe("buildPageMetadata", () => {
   it("repeats the site fields in the link preview, because a page replaces the parent's openGraph as a whole", () => {
     expect(metadata.openGraph).toMatchObject({
       type: "website",
-      siteName: "space-log",
-      title: "Privacy | space-log",
+      siteName: "Example Studio",
+      title: "Privacy | Example Studio",
       description: "A fictional studio.",
       url: "/privacy",
       locale: "ja_JP",
@@ -68,7 +68,7 @@ describe("buildPageMetadata", () => {
   it("keeps the Twitter card in step with the link preview", () => {
     expect(metadata.twitter).toMatchObject({
       card: "summary_large_image",
-      title: "Privacy | space-log",
+      title: "Privacy | Example Studio",
       description: "A fictional studio.",
     });
   });

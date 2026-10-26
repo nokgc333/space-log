@@ -5,10 +5,12 @@ import { JsonLd } from "./json-ld";
 
 describe("JsonLd", () => {
   it("renders the data as a JSON-LD script that the browser does not run", () => {
-    const html = renderToStaticMarkup(<JsonLd data={{ name: "space-log" }} />);
+    const html = renderToStaticMarkup(
+      <JsonLd data={{ name: "Example Studio" }} />,
+    );
 
     expect(html).toBe(
-      '<script type="application/ld+json">{"name":"space-log"}</script>',
+      '<script type="application/ld+json">{"name":"Example Studio"}</script>',
     );
   });
 
