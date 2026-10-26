@@ -8,11 +8,11 @@ import type { NewsEntry } from "@/lib/content/schema";
 
 import { sortNewestFirst } from "./sort-entries";
 
-const NEWS_DIR = path.join(process.cwd(), "content", "news");
+export const NEWS_DIR = path.join(process.cwd(), "content", "news");
 const ENTRY_FILE = /^(\d{4}-\d{2}-\d{2})-[a-z0-9-]+\.md$/;
 const FRONTMATTER = /^﻿?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
-function readEntry(dir: string, file: string): NewsEntry {
+export function readNewsEntry(dir: string, file: string): NewsEntry {
   const match = ENTRY_FILE.exec(file);
   if (!match) throw new Error(`${file}: name it like 2026-10-01-some-words.md`);
 
@@ -41,14 +41,17 @@ function readEntry(dir: string, file: string): NewsEntry {
   return { id: file.replace(/\.md$/, ""), ...result.data };
 }
 
-export function loadNewsEntries(dir: string = NEWS_DIR): NewsEntry[] {
+export function listNewsFiles(dir: string = NEWS_DIR): string[] {
   if (!fs.existsSync(/*turbopackIgnore: true*/ dir))
     throw new Error(`news folder not found: ${dir}`);
 
-  const entries = fs
+  return fs
     .readdirSync(/*turbopackIgnore: true*/ dir)
     .filter((file) => file.endsWith(".md"))
-    .sort()
-    .map((file) => readEntry(dir, file));
+    .sort();
+}
+
+export function loadNewsEntries(dir: string = NEWS_DIR): NewsEntry[] {
+  const entries = listNewsFiles(dir).map((file) => readNewsEntry(dir, file));
   return sortNewestFirst(entries);
 }
