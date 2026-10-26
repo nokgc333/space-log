@@ -11,6 +11,7 @@ The contact form sends mail, so repeated posts could use up the sending quota or
 
 - A sliding window of attempt times is kept per visitor in a `Map`: 5 attempts in 10 minutes. A wrong entry counts as an attempt. When the limit is reached, the answer carries the number of seconds to wait.
 - The visitor is identified by the first address of `x-forwarded-for`, then `x-real-ip`; visitors without either share one `unknown` key.
+- **Assumption:** this is only sound behind a host that sets these headers itself. On Vercel the platform writes the connecting address into `x-forwarded-for`, so a visitor cannot choose the first address. Behind a proxy that passes the visitor's own header through, a visitor could send a new first address with every request and never reach the limit. Before moving the site to such a host, switch to the address that the host guarantees. Tests pin that the first address is the one counted: later addresses in the list do not give a visitor a new allowance, and without any header all visitors share one key.
 - The map holds at most 5,000 visitors. When it is full, the visitor who has been idle the longest is dropped; expired visitors always come first, so no separate cleanup is needed.
 - The server action does not trust its caller: it also checks the limit, validates the input again with the same schema, ignores entries that fill the hidden trap field and checks the mail settings.
 

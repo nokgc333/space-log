@@ -261,8 +261,9 @@ Performance budgets are checked on every pull request (`.lighthouserc.cjs`, the 
 - Response headers:
   Content-Security-Policy, Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy. (The `X-Powered-By` header is off.)
 - The `script-src` of the Content-Security-Policy keeps `'unsafe-inline'`: removing it needs a per-request nonce, which makes every page dynamic (no CDN cache, about 4 times the response time in a local measurement). The pages show no user input, and everything else in the policy stays strict (ADR-0002).
-- The contact form validates on the client and again on the server, rejects control characters in single-line fields, has a hidden trap field, and allows 5 sends per visitor per 10 minutes (ADR-0003).
+- The contact form validates on the client and again on the server, rejects control characters in single-line fields, has a hidden trap field, and allows 5 sends per visitor per 10 minutes. The visitor is the address the host puts first in `x-forwarded-for`, which is sound on Vercel but not behind a proxy that passes the visitor's own header through (ADR-0003). The mail subject and the sender are fixed, so a visitor cannot add a mail header.
 - `npm audit --omit=dev` reports no vulnerabilities in the production dependencies. Dependabot, a dependency review of pull requests, CodeQL, secret scanning with push protection and a secret scan before each commit are on (ADR-0008).
+- The source maps of the production build are published (the code is public anyway). A browser only fetches them when its developer tools are open, so visitors download nothing more.
 - The site sets no cookies and stores only the chosen theme in the browser.
 
 ## Deployment
