@@ -50,7 +50,8 @@ CLAUDE.local.md
 /.superpowers/
 
 # design documents
-/docs
+/docs/*
+!/docs/adr/
 
 # test output
 /test-results/
