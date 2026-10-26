@@ -77,6 +77,35 @@ describe("Dependabot", () => {
   });
 });
 
+describe("pre-push checks", () => {
+  it("runs the quick checks (lint, types, format, unit tests) before every push", () => {
+    expect(read(".husky/pre-push")).toContain("npm run check");
+  });
+
+  it("makes npm run check cover lint, types, format and the unit tests", () => {
+    const check: string = json("package.json").scripts.check;
+
+    for (const step of ["lint", "typecheck", "format:check", "test"]) {
+      expect(check, step).toContain(`npm run ${step}`);
+    }
+  });
+});
+
+describe("the letter-width stress check", () => {
+  const spec = read("e2e/text-metrics.spec.ts");
+
+  it("still widens every letter by about 10% where the layout is measured", () => {
+    expect(spec).toContain("letter-spacing: 0.055em");
+    expect(spec).toContain("about 10% wider");
+  });
+
+  it("covers the narrowest and the widest layouts", () => {
+    for (const width of ["320", "375", "1023", "1024", "1440"]) {
+      expect(spec, width).toContain(width);
+    }
+  });
+});
+
 describe("pre-commit checks", () => {
   it("runs lint-staged from the husky pre-commit hook", () => {
     expect(read(".husky/pre-commit")).toContain("lint-staged");
