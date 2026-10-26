@@ -22,6 +22,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:perf": "lhci autorun",
+    "content:check": "tsx scripts/content-check.ts",
     "prepare": "husky",
     "secrets:check": "secretlint \"**/*\" --secretlintignore .secretlintignore"
   },
@@ -61,6 +62,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "secretlint": "^13.0.7",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "vitest": "^5.0.5"
   }
