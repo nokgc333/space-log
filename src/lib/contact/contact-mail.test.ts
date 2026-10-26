@@ -46,6 +46,30 @@ describe("buildContactMail", () => {
     expect(mail.subject).not.toContain("spam");
   });
 
+  it.each(["name", "email", "company", "message"])(
+    "keeps the sender, the receiver and the subject fixed when %s holds a line that looks like a header",
+    (field) => {
+      const hostile = "x\r\nBcc: attacker@example.test\r\nSubject: spam";
+      const mail = buildContactMail(
+        { ...VALUES, [field]: hostile },
+        ROUTE,
+        "Tools",
+        COPY,
+      );
+
+      expect(mail.subject).toBe(COPY.subject);
+      expect(mail.from).toBe(ROUTE.from);
+      expect(mail.to).toEqual([ROUTE.to]);
+      expect(Object.keys(mail).sort()).toEqual([
+        "from",
+        "reply_to",
+        "subject",
+        "text",
+        "to",
+      ]);
+    },
+  );
+
   it("lists every answer under its label, the topic by its label text", () => {
     const mail = buildContactMail(
       { ...VALUES, company: "Studio" },

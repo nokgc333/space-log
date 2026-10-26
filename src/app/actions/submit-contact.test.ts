@@ -150,6 +150,23 @@ describe("submitContact", () => {
       );
     });
 
+    it.each(["name", "email", "company"])(
+      "sends nothing when %s holds a line break that could add a mail header",
+      async (field) => {
+        withMailSettings();
+        const submitContact = await loadAction();
+        const value =
+          field === "email"
+            ? "a@example.com\r\nBcc: attacker@example.test"
+            : "a\r\nBcc: attacker@example.test";
+
+        expect(await submitContact({ ...VALID, [field]: value })).toMatchObject(
+          { ok: false, kind: "invalid" },
+        );
+        expect(fetchMock).not.toHaveBeenCalled();
+      },
+    );
+
     it("does not log anything on success", async () => {
       withMailSettings();
       const submitContact = await loadAction();

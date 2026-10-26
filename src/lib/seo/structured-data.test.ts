@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildWebSiteJsonLd, serializeJsonLd } from "./structured-data";
 
 const site = {
-  name: "space-log",
+  name: "Example Studio",
   description: "A fictional studio.",
   url: "https://example.test",
 };
@@ -13,7 +13,7 @@ describe("buildWebSiteJsonLd", () => {
     expect(buildWebSiteJsonLd(site)).toEqual({
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: "space-log",
+      name: "Example Studio",
       description: "A fictional studio.",
       url: "https://example.test",
       inLanguage: "ja",

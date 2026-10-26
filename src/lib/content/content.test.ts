@@ -105,7 +105,7 @@ describe("content", () => {
   });
 
   it("rejects a site url that is not a url", () => {
-    const broken = { ...rawSite, url: "space-log.vercel.app" };
+    const broken = { ...rawSite, url: "example.test" };
     expect(siteSchema.safeParse(broken).success).toBe(false);
   });
 
