@@ -2,14 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import { inversion as rawInversion } from "@content/sections/inversion";
 import { news as rawNews } from "@content/sections/news";
+import { pipeline as rawPipeline } from "@content/sections/pipeline";
 import { site as rawSite } from "@content/site";
 
-import { hero, inversion, news, site } from "./index";
-import { inversionSchema, newsSchema, siteSchema } from "./schema";
+import { hero, inversion, news, pipeline, site } from "./index";
+import {
+  inversionSchema,
+  newsSchema,
+  pipelineSchema,
+  siteSchema,
+} from "./schema";
 
 describe("content", () => {
   it("loads every section", () => {
-    const sections = [site, hero, inversion, news];
+    const sections = [site, hero, inversion, news, pipeline];
     for (const section of sections) expect(section).toBeDefined();
   });
 
@@ -26,6 +32,12 @@ describe("content", () => {
   it("rejects a news section without labels for the pager buttons", () => {
     const broken = { ...rawNews, pager: undefined };
     expect(newsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects two pipeline stages with the same id", () => {
+    const first = rawPipeline.stages[0];
+    const broken = { ...rawPipeline, stages: [first, first] };
+    expect(pipelineSchema.safeParse(broken).success).toBe(false);
   });
 
   it("rejects a site url that is not a url", () => {
