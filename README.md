@@ -13,3 +13,11 @@ Next.js と React による Web アプリケーションの雛形です。
 ## ライセンス
 
 MIT。詳細は [LICENSE](LICENSE) を参照してください。
+
+## 確認
+
+- `npm run lint` で静的解析を実行します。
+- `npm run typecheck` でルート型生成と型検査を実行します。
+- `npm run format:check` で整形を検査します。
+- 開発サーバーの `/` で空の main が描画されることを確認します。
+- 本番ビルド後に `npm start` を実行し、`/` が表示されることを確認します。
