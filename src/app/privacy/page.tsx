@@ -5,16 +5,13 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { PolicyDocument } from "@/components/privacy/policy-document";
 import { privacy, site } from "@/lib/content";
+import { PRIVACY_PATH } from "@/lib/routes";
+import { buildPageMetadata } from "@/lib/seo/site-metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata(site, {
   title: privacy.title,
-  alternates: { canonical: "/privacy" },
-  openGraph: {
-    title: `${privacy.title} | ${site.name}`,
-    description: site.description,
-    url: new URL("/privacy", site.url).toString(),
-  },
-};
+  path: PRIVACY_PATH,
+});
 
 export default function PrivacyPage() {
   return (
