@@ -131,4 +131,27 @@ describe("PolicyDocument", () => {
       expect(screen.getAllByText(text)).toHaveLength(1);
     }
   });
+
+  describe("laid out like an article", () => {
+    it("stacks everything in the normal flow, with no flex or grid box", () => {
+      const { container } = renderDocument();
+      expect(container.querySelector(".flex, .grid, .inline-flex")).toBeNull();
+    });
+
+    it("underlines each chapter heading", () => {
+      renderDocument();
+      for (const heading of screen.getAllByRole("heading", { level: 2 })) {
+        expect(heading).toHaveClass("inline-block", "border-b-2");
+      }
+    });
+
+    it("leaves room under the lead, each heading and each paragraph", () => {
+      const { container } = renderDocument();
+      expect(container.firstElementChild?.className).toMatch(/\bmb-/);
+      for (const heading of screen.getAllByRole("heading", { level: 2 })) {
+        expect(heading.className).toMatch(/\bmb-/);
+      }
+      expect(screen.getByText("first paragraph").className).toMatch(/\bmb-/);
+    });
+  });
 });
