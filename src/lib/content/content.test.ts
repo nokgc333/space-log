@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import { contact as rawContact } from "@content/sections/contact";
 import { inversion as rawInversion } from "@content/sections/inversion";
 import { news as rawNews } from "@content/sections/news";
 import { pipeline as rawPipeline } from "@content/sections/pipeline";
 import { tools as rawTools } from "@content/sections/tools";
 import { site as rawSite } from "@content/site";
 
-import { hero, inversion, news, pipeline, site, tools } from "./index";
+import { contact, hero, inversion, news, pipeline, site, tools } from "./index";
 import {
+  contactContentSchema,
   inversionSchema,
   newsSchema,
   pipelineSchema,
@@ -17,7 +19,7 @@ import {
 
 describe("content", () => {
   it("loads every section", () => {
-    const sections = [site, hero, inversion, news, pipeline, tools];
+    const sections = [site, hero, inversion, news, pipeline, tools, contact];
     for (const section of sections) expect(section).toBeDefined();
   });
 
@@ -89,6 +91,31 @@ describe("content", () => {
 
   it("rejects an empty site name", () => {
     expect(siteSchema.safeParse({ ...rawSite, name: "" }).success).toBe(false);
+  });
+
+  it("rejects a consent sentence that does not contain the text to link", () => {
+    const broken = {
+      ...rawContact,
+      consentLink: { ...rawContact.consentLink, text: "not in the sentence" },
+    };
+    expect(contactContentSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a contact section without the consent link", () => {
+    const broken = { ...rawContact, consentLink: undefined };
+    expect(contactContentSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a consent link without the note for the new tab", () => {
+    const broken = {
+      ...rawContact,
+      consentLink: { ...rawContact.consentLink, note: "" },
+    };
+    expect(contactContentSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("links a part of the real consent sentence", () => {
+    expect(contact.fields.consent).toContain(contact.consentLink.text);
   });
 
   describe("inversion statements", () => {

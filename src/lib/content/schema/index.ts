@@ -1,3 +1,4 @@
+export * from "./contact";
 export * from "./hero";
 export * from "./inversion";
 export * from "./news";
