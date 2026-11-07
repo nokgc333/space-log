@@ -72,6 +72,53 @@ function setup(
 }
 
 describe("ContactForm", () => {
+  describe("checking the entry in the browser", () => {
+    it("asks for every required field and sends nothing", async () => {
+      const submit = setup();
+      await send();
+      expect(
+        await screen.findAllByText(CONTACT.messages.required),
+      ).toHaveLength(3);
+      expect(screen.getByText(CONTACT.messages.choose)).toBeInTheDocument();
+      expect(screen.getByText(CONTACT.messages.consent)).toBeInTheDocument();
+      expect(submit).not.toHaveBeenCalled();
+    });
+
+    it("shows the message of a wrong email and does not send", async () => {
+      const submit = setup();
+      await fillValid();
+      await userEvent.clear(field("email"));
+      await userEvent.type(field("email"), "taro@");
+      await send();
+      expect(
+        await screen.findByText(CONTACT.messages.email),
+      ).toBeInTheDocument();
+      expect(submit).not.toHaveBeenCalled();
+    });
+
+    it("marks the wrong field and links it to its message", async () => {
+      setup();
+      await send();
+      const name = field("name");
+      await screen.findAllByText(CONTACT.messages.required);
+      expect(name).toHaveAttribute("aria-invalid", "true");
+      const messageId = name.getAttribute("aria-describedby");
+      expect(messageId).toBeTruthy();
+      expect(document.getElementById(messageId as string)).toHaveTextContent(
+        CONTACT.messages.required,
+      );
+    });
+
+    it("leaves the optional company empty without a complaint", async () => {
+      const submit = setup();
+      await fillValid();
+      await send();
+      await screen.findByRole("status");
+      expect(submit).toHaveBeenCalledTimes(1);
+      expect(field("company")).toHaveAttribute("aria-invalid", "false");
+    });
+  });
+
   describe("the answer", () => {
     it("says nothing was really sent in demo mode", async () => {
       setup({ ok: true, mode: "demo" });
@@ -124,6 +171,21 @@ describe("ContactForm", () => {
       expect(
         screen.getByRole("button", { name: CONTACT.submit }),
       ).toBeEnabled();
+    });
+  });
+
+  describe("the fields", () => {
+    it("marks the company as optional", () => {
+      setup();
+      expect(screen.getByText(`(${CONTACT.optionalMark})`)).toBeInTheDocument();
+    });
+
+    it("lets the browser fill in the usual details", () => {
+      setup();
+      expect(field("name")).toHaveAttribute("autocomplete", "name");
+      expect(field("email")).toHaveAttribute("autocomplete", "email");
+      expect(field("email")).toHaveAttribute("type", "email");
+      expect(field("company")).toHaveAttribute("autocomplete", "organization");
     });
   });
 });
