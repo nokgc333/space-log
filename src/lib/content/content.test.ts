@@ -1,15 +1,31 @@
 import { describe, expect, it } from "vitest";
 
 import { inversion as rawInversion } from "@content/sections/inversion";
+import { news as rawNews } from "@content/sections/news";
 import { site as rawSite } from "@content/site";
 
-import { hero, inversion, site } from "./index";
-import { inversionSchema, siteSchema } from "./schema";
+import { hero, inversion, news, site } from "./index";
+import { inversionSchema, newsSchema, siteSchema } from "./schema";
 
 describe("content", () => {
   it("loads every section", () => {
-    const sections = [site, hero, inversion];
+    const sections = [site, hero, inversion, news];
     for (const section of sections) expect(section).toBeDefined();
+  });
+
+  it("rejects a news section that shows no entries per page", () => {
+    const broken = { ...rawNews, perPage: 0 };
+    expect(newsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a news section with a page size that is not a whole number", () => {
+    const broken = { ...rawNews, perPage: 2.5 };
+    expect(newsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a news section without labels for the pager buttons", () => {
+    const broken = { ...rawNews, pager: undefined };
+    expect(newsSchema.safeParse(broken).success).toBe(false);
   });
 
   it("rejects a site url that is not a url", () => {
