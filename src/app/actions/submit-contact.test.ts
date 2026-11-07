@@ -119,4 +119,110 @@ describe("submitContact", () => {
       );
     });
   });
+
+  describe("with complete mail settings", () => {
+    it("sends the checked entry to the owner and says it was sent", async () => {
+      withMailSettings();
+      const submitContact = await loadAction();
+      expect(await submitContact(VALID)).toEqual({ ok: true, mode: "sent" });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe("https://api.resend.com/emails");
+      expect(init.headers.Authorization).toBe("Bearer secret-key");
+      const mail = JSON.parse(init.body);
+      expect(mail.from).toBe("Site <site@example.com>");
+      expect(mail.to).toEqual(["owner@example.com"]);
+      expect(mail.reply_to).toBe("taro@example.com");
+      expect(mail.subject).toBe(contact.mail.subject);
+      expect(mail.text).toContain(`${contact.mail.labels.name}: 山田 太郎\n`);
+      expect(mail.text).toContain(
+        `${contact.mail.labels.topic}: ${contact.topics[0].label}`,
+      );
+    });
+
+    it("does not log anything on success", async () => {
+      withMailSettings();
+      const submitContact = await loadAction();
+      await submitContact(VALID);
+      expect(errorLog).not.toHaveBeenCalled();
+      expect(warnLog).not.toHaveBeenCalled();
+    });
+
+    it("reports a failure when the mail service refuses, logging only the status", async () => {
+      withMailSettings();
+      fetchMock.mockResolvedValue(
+        new Response("echo: 相談です", { status: 500 }),
+      );
+      const submitContact = await loadAction();
+      expect(await submitContact(VALID)).toEqual({ ok: false, kind: "failed" });
+      const logged = JSON.stringify(errorLog.mock.calls);
+      expect(logged).toContain("status 500");
+      expect(logged).not.toContain("相談です");
+      expect(logged).not.toContain("secret-key");
+      expect(logged).not.toContain("taro@example.com");
+    });
+
+    it("reports a failure when the network is down", async () => {
+      withMailSettings();
+      fetchMock.mockRejectedValue(new Error("offline"));
+      const submitContact = await loadAction();
+      expect(await submitContact(VALID)).toEqual({ ok: false, kind: "failed" });
+      expect(errorLog).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("with only some of the mail settings", () => {
+    it("reports a failure and names what is missing, never a value", async () => {
+      withMailSettings({ RESEND_API_KEY: "secret-key" });
+      const submitContact = await loadAction();
+      expect(await submitContact(VALID)).toEqual({ ok: false, kind: "failed" });
+      const logged = JSON.stringify(errorLog.mock.calls);
+      expect(logged).toContain("CONTACT_MAIL_FROM");
+      expect(logged).not.toContain("secret-key");
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("limiting how often one visitor can send", () => {
+    it("lets 5 attempts in 10 minutes through and turns the 6th away", async () => {
+      const submitContact = await loadAction();
+      for (let attempt = 1; attempt <= 5; attempt += 1) {
+        expect(await submitContact(VALID)).toEqual({ ok: true, mode: "demo" });
+      }
+      const sixth = await submitContact(VALID);
+      expect(sixth).toMatchObject({ ok: false, kind: "rate-limited" });
+      expect(
+        sixth.ok === false &&
+          sixth.kind === "rate-limited" &&
+          sixth.retryAfterSeconds,
+      ).toBeGreaterThan(0);
+    });
+
+    it("counts wrong entries too", async () => {
+      const submitContact = await loadAction();
+      for (let attempt = 1; attempt <= 5; attempt += 1) {
+        await submitContact({ ...VALID, email: "x" });
+      }
+      expect(await submitContact(VALID)).toMatchObject({
+        kind: "rate-limited",
+      });
+    });
+
+    it("sends nothing for a visitor who is turned away", async () => {
+      withMailSettings();
+      const submitContact = await loadAction();
+      for (let attempt = 1; attempt <= 6; attempt += 1)
+        await submitContact(VALID);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
+    });
+
+    it("counts each visitor on their own", async () => {
+      const submitContact = await loadAction();
+      for (let attempt = 1; attempt <= 6; attempt += 1)
+        await submitContact(VALID);
+      requestHeaders.current = { "x-forwarded-for": "198.51.100.7" };
+      expect(await submitContact(VALID)).toEqual({ ok: true, mode: "demo" });
+    });
+  });
 });
