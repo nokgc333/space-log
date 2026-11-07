@@ -128,3 +128,75 @@ test("the Tab order starts with the skip link, the logo, the section links and t
     site.themeLabel,
   ]);
 });
+
+test("under forced colors the focus ring stays visible on every Tab stop", async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: "active" });
+  await openAt(page, 1440, 900, "/");
+
+  const stops = await tabThroughPage(page);
+
+  expect(stops.length).toBeGreaterThan(20);
+  for (const stop of stops) expectVisibleRing(stop);
+});
+
+test("when the visitor asks for less motion, nothing animates or eases and the page jumps instead of scrolling", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openAt(page, 1440, 900, "/");
+
+  const motion = await page.evaluate(() => {
+    const longest = (values: string[]) =>
+      Math.max(
+        ...values.flatMap((value) =>
+          value.split(",").map((part) => {
+            const seconds = Number.parseFloat(part);
+            return part.trim().endsWith("ms") ? seconds / 1000 : seconds;
+          }),
+        ),
+      );
+    const all = [...document.querySelectorAll("*")].map((element) =>
+      getComputedStyle(element),
+    );
+    return {
+      scroll: getComputedStyle(document.documentElement).scrollBehavior,
+      transition: longest(all.map((style) => style.transitionDuration)),
+      animation: longest(all.map((style) => style.animationDuration)),
+    };
+  });
+
+  expect(motion.scroll).toBe("auto");
+  expect(motion.transition).toBeLessThan(0.001);
+  expect(motion.animation).toBeLessThan(0.001);
+  await expect(page.locator("#hero")).toHaveAttribute("data-motion", "reduced");
+});
+
+test("when the visitor asks for more contrast, the quiet text and borders get darker", async ({
+  page,
+}) => {
+  const read = () =>
+    page.evaluate(() => {
+      const style = getComputedStyle(document.documentElement);
+      return [
+        style.getPropertyValue("--muted"),
+        style.getPropertyValue("--control"),
+      ];
+    });
+  await openAt(page, 1440, 900, "/");
+  const normal = await read();
+
+  await page.emulateMedia({ contrast: "more" });
+  const more = await read();
+
+  expect(more).not.toEqual(normal);
+  const surface = await page.evaluate(
+    () => getComputedStyle(document.body).backgroundColor,
+  );
+  const hex = (value: string) => {
+    const n = Number.parseInt(value.trim().slice(1), 16);
+    return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`;
+  };
+  expect(contrast(hex(more[0]), surface)).toBeGreaterThanOrEqual(7);
+});
