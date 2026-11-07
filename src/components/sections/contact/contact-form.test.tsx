@@ -119,6 +119,40 @@ describe("ContactForm", () => {
     });
   });
 
+  describe("what is sent", () => {
+    it("hands over the checked values, trimmed, with the trap field empty", async () => {
+      const submit = setup();
+      await userEvent.type(field("name"), "  山田  ");
+      await userEvent.type(field("email"), "taro@example.com");
+      await userEvent.selectOptions(field("topic"), "tools");
+      await userEvent.type(field("message"), "相談です");
+      await userEvent.click(field("consent"));
+      await send();
+      await screen.findByRole("status");
+      expect(submit).toHaveBeenCalledWith({
+        name: "山田",
+        email: "taro@example.com",
+        company: "",
+        topic: "tools",
+        message: "相談です",
+        consent: true,
+        website: "",
+      });
+    });
+
+    it("hides the trap field from people", () => {
+      setup();
+      const trap = document.querySelector(
+        'input[name="website"]',
+      ) as HTMLElement;
+      expect(trap).toHaveAttribute("tabindex", "-1");
+      expect(trap).toHaveAttribute("autocomplete", "off");
+      expect(trap.parentElement).toHaveAttribute("aria-hidden", "true");
+      expect(trap.parentElement).toHaveClass("hidden");
+      expect(screen.queryByLabelText(/website/i)).toBeNull();
+    });
+  });
+
   describe("the answer", () => {
     it("says nothing was really sent in demo mode", async () => {
       setup({ ok: true, mode: "demo" });
@@ -175,6 +209,15 @@ describe("ContactForm", () => {
   });
 
   describe("the fields", () => {
+    it("offers the topics, with an unchosen first entry", () => {
+      setup();
+      const options = Array.from(
+        (field("topic") as HTMLSelectElement).options,
+      ).map((option) => option.value);
+      expect(options).toEqual(["", "pipeline", "tools"]);
+      expect((field("topic") as HTMLSelectElement).value).toBe("");
+    });
+
     it("marks the company as optional", () => {
       setup();
       expect(screen.getByText(`(${CONTACT.optionalMark})`)).toBeInTheDocument();
@@ -186,6 +229,45 @@ describe("ContactForm", () => {
       expect(field("email")).toHaveAttribute("autocomplete", "email");
       expect(field("email")).toHaveAttribute("type", "email");
       expect(field("company")).toHaveAttribute("autocomplete", "organization");
+    });
+  });
+
+  describe("consent", () => {
+    it("links the privacy policy inside the consent label", () => {
+      setup();
+      const link = screen.getByRole("link", { name: "privacy policy" });
+      expect(link).toHaveAttribute("href", "/privacy");
+      expect(link.closest("label")).toContainElement(field("consent"));
+    });
+
+    it("describes the link by the new tab note without showing it", () => {
+      setup();
+      const link = screen.getByRole("link", { name: "privacy policy" });
+      expect(link).toHaveAccessibleDescription("(opens in a new tab)");
+      expect(screen.getByText("(opens in a new tab)")).not.toBeVisible();
+    });
+
+    it("keeps the checkbox and the whole sentence as the only two items of the label", () => {
+      setup();
+      const label = screen
+        .getByRole("link", { name: "privacy policy" })
+        .closest("label");
+      expect(label?.childNodes).toHaveLength(2);
+    });
+
+    it("keeps the label text exactly the sentence", () => {
+      setup();
+      expect(
+        screen.getByRole("link", { name: "privacy policy" }).closest("label")
+          ?.textContent,
+      ).toBe("I agree to the privacy policy");
+    });
+
+    it("keeps the checkbox named by the whole sentence, without the new tab note", () => {
+      setup();
+      expect(
+        screen.getByRole("checkbox", { name: "I agree to the privacy policy" }),
+      ).toBeInTheDocument();
     });
   });
 });

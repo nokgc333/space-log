@@ -3,7 +3,13 @@
 import type { ContactValues } from "@/lib/contact/contact-schema";
 import type { Contact } from "@/lib/content";
 
-import { MessageField, TextField } from "./contact-fields";
+import {
+  ConsentField,
+  MessageField,
+  OutcomeMessage,
+  TextField,
+  TopicField,
+} from "./contact-fields";
 import { type Submit, useContactForm } from "./use-contact-form";
 
 type Props = { contact: Contact; submit: Submit };
@@ -45,20 +51,13 @@ export function ContactForm({ contact, submit }: Props) {
         error={errorOf("company")}
         register={register}
       />
-      <label>
-        {fields.topic}
-        <select {...register("topic")}>
-          <option value="" disabled>
-            —
-          </option>
-          {contact.topics.map((topic) => (
-            <option key={topic.value} value={topic.value}>
-              {topic.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      {errorOf("topic") && <p>{errorOf("topic")}</p>}
+      <TopicField
+        name="topic"
+        label={fields.topic}
+        topics={contact.topics}
+        error={errorOf("topic")}
+        register={register}
+      />
       <MessageField
         name="message"
         label={fields.message}
@@ -68,11 +67,11 @@ export function ContactForm({ contact, submit }: Props) {
       <div aria-hidden="true" className="hidden">
         <input tabIndex={-1} autoComplete="off" {...register("website")} />
       </div>
-      <label>
-        <input type="checkbox" {...register("consent")} />
-        {fields.consent}
-      </label>
-      {errorOf("consent") && <p>{errorOf("consent")}</p>}
+      <ConsentField
+        contact={contact}
+        error={errorOf("consent")}
+        register={register}
+      />
       <button
         type="submit"
         disabled={isSubmitting}
@@ -80,7 +79,7 @@ export function ContactForm({ contact, submit }: Props) {
       >
         {isSubmitting ? contact.sending : contact.submit}
       </button>
-      {outcome && <p role={outcome.tone}>{outcome.text}</p>}
+      <OutcomeMessage outcome={outcome} />
     </form>
   );
 }
