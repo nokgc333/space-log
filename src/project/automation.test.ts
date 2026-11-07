@@ -79,7 +79,7 @@ describe("Dependabot", () => {
 
 describe("the end-to-end job", () => {
   const ci = read(".github/workflows/ci.yml");
-  const e2e = ci.slice(ci.indexOf("  e2e:"));
+  const e2e = ci.slice(ci.indexOf("  e2e:"), ci.indexOf("  performance:"));
   const SLOW_MIRROR_MINUTES = 25;
 
   it("allows time for a slow package mirror, which once took 14 minutes to deliver 20 MB, while the tests take about one", () => {
