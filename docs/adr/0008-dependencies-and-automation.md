@@ -1,34 +1,34 @@
-# ADR-0008: Dependencies are updated by small steps, and some majors are held back on purpose
+# ADR-0008: 依存関係は小さい単位で更新し、一部のメジャーバージョンは意図して据え置く
 
-- Status: accepted (2026-10-26)
-- Related: `.github/dependabot.yml`, `.github/workflows/security.yml`, `.github/branch-protection/`, `.nvmrc`
+- 状態: 採用（2026-10-26）
+- 関連: `.github/dependabot.yml`、`.github/workflows/security.yml`、`.github/branch-protection/`、`.nvmrc`
 
-## Context
+## 背景
 
-Old dependencies collect known vulnerabilities, and large jumps break builds. At the same time, a few packages cannot move because other tools require older versions.
+古い依存関係には既知の脆弱性がたまり、大きな更新はビルドを壊す。一方で、一部のパッケージは他のツールが古いバージョンを必要とするため更新できない。
 
-## Decision
+## 決定
 
-- Dependabot checks npm and GitHub Actions every Monday and groups minor and patch updates into one pull request. Nothing is merged automatically.
-- Updates are made one at a time with the same npm version as the CI (pinned in `package.json` and `.nvmrc`), the lock file difference is read, and the whole suite runs after each step.
-- Held back on purpose, with the reason:
-  - `typescript` 6.0: `typescript-eslint` does not accept 6.1 or newer yet; Dependabot is told to skip them.
-  - `@types/node` 24: the types follow the Node 24 runtime.
-- ESLint 10 is in use. The React, JSX accessibility and import plugins that Next.js bundles declare support up to ESLint 9; linting passes with ESLint 10, and the bundled plugins are rechecked on each Next.js update.
-- Security checks run on every pull request and every week: `npm audit` for production dependencies (high and above fails), a review of the dependencies a pull request adds, and CodeQL. Secret scanning with push protection is on, and staged files are scanned before each commit.
-- The main branch requires the five checks (build and unit tests, end-to-end tests, performance budget, dependency audit, CodeQL) and forbids force pushes and deletions. Administrators are not bound, so the only owner can always repair the repository; the checks still run on every pull request.
-- The settings of the branch protection are kept in the repository as files and applied with `gh api`.
+- Dependabot は毎週月曜日に npm と GitHub Actions を検査し、マイナーとパッチの更新を 1 つのプルリクエストにまとめる。自動では何もマージしない。
+- 更新は CI と同じ npm のバージョン(`package.json` と `.nvmrc` で固定)で 1 つずつ行い、ロックファイルの差分を読み、各段階のあとに全テストを動かす。
+- 意図して据え置くものと、その理由:
+  - `typescript` 6.0: `typescript-eslint` が、まだ 6.1 以降を受け付けないため、Dependabot にそれらを飛ばすよう指定する。
+  - `@types/node` 24: 型は Node 24 のランタイムに合わせる。
+- ESLint 10 を使う。Next.js が同梱する React、JSX のアクセシビリティ、import のプラグインは、宣言上は ESLint 9 までの対応だが、ESLint 10 で lint は通り、Next.js の更新ごとに同梱プラグインをもう一度確かめる。
+- 全てのプルリクエストと毎週の実行で、本番の依存関係の `npm audit`(high 以上で失敗)、プルリクエストが足す依存関係のレビュー、CodeQL のセキュリティ検査を動かす。push の保護つきの秘密情報の検査を有効にし、コミット前に毎回ステージしたファイルを検査する。
+- main ブランチは 5 つの検査(ビルドと単体テスト、E2E テスト、性能の予算、依存関係の監査、CodeQL)を必須とし、force push と削除を禁止する。管理者は制約を受けないので、唯一の所有者がいつでもリポジトリを修復できるが、検査は全てのプルリクエストで動く。
+- ブランチ保護の設定は、リポジトリにファイルとして置き、`gh api` で適用する。
 
-## Consequences
+## 結果
 
-- Good: updates arrive in small, reviewed steps; vulnerabilities are found by machines; the reasons for held packages are written down.
-- Bad: held packages fall behind until their plugins catch up; the pull request count is higher than with no automation.
+- 良い: 更新が小さい単位でレビューを経て入り、脆弱性は機械が見つけ、据え置くパッケージの理由が記録される。
+- 悪い: 据え置いたパッケージは、プラグインの対応が追いつくまで古いままになり、自動化しない場合よりプルリクエストの数が増える。
 
-## Alternatives considered
+## 検討した代替案
 
-- Renovate: more settings, and it needs an app.
-- Automatic merging of green updates: a green build does not read a changelog.
+- Renovate: 設定が増え、アプリが要る。
+- 検査が通った更新の自動マージ: ビルドが通っても変更履歴は読めない。
 
-## Revisit when
+## 見直す条件
 
-`typescript-eslint` accepts TypeScript 6.1 or newer, Next.js changes the plugins it bundles, or the Node baseline moves.
+`typescript-eslint` が TypeScript 6.1 以降を受け付けるか、Next.js が同梱するプラグインを変えるか、Node の基準バージョンが変わる。

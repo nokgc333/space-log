@@ -1,46 +1,46 @@
-# ADR-0006: Performance is guarded by budgets measured on the CI, and the fonts stay as they are
+# ADR-0006: 性能は CI で測った予算で守り、フォントはそのまま残す
 
-- Status: accepted (2026-10-25), amended (2026-10-26)
-- Related: `.lighthouserc.cjs`, `.github/workflows/ci.yml`, `src/app/fonts.ts`
+- 状態: 採用（2026-10-25）、改訂（2026-10-26）
+- 関連: `.lighthouserc.cjs`、`.github/workflows/ci.yml`、`src/app/fonts.ts`
 
-## Context
+## 背景
 
-The page is meant to feel fast, and a slower page should fail a pull request. Two things made this harder than expected: the hero is drawn in software on the CI (no graphics card), and the Japanese body font brings many small files.
+ページは速く感じられることを目指し、遅くなる変更はプルリクエストで失敗させる必要がある。想定より難しくなった理由は 2 つあり、CI ではヒーローをソフトウェアで描くこと(グラフィックスカードが無い)と、日本語の本文フォントに小さいファイルが多いことである。
 
-## Decision
+## 決定
 
-- Lighthouse CI measures the home page and the privacy page on a production build, mobile with the simulated slow connection, 3 runs each, and judges the median run. A budget that is exceeded fails the job (`Performance Budget`), which is a required check of the main branch.
-- The budgets are the measured value plus a margin, and they are taken from the CI, not from a laptop with a graphics card:
+- Lighthouse CI は本番ビルドのホームとプライバシーを、低速回線を模擬したモバイルでそれぞれ 3 回測り、中央値の実行を判定する。予算を超えるとジョブ(`Performance Budget`)が失敗し、これは main ブランチの必須の検査である。
+- 予算は測った値に余裕を足したもので、グラフィックスカードのあるノートパソコンではなく CI の値から決める:
 
-| Page        | Score        | Largest paint | Script | Transfer | Blocking time |
-| ----------- | ------------ | ------------- | ------ | -------- | ------------- |
-| Home        | 0.25 or more | 9.5 s         | 520 KB | 1.3 MB   | 7.5 s         |
-| Other pages | 0.8 or more  | 4.4 s         | 240 KB | 850 KB   | 450 ms        |
+| ページ     | スコア    | 最大の描画 | スクリプト | 転送量 | ブロッキング時間 |
+| ---------- | --------- | ---------- | ---------- | ------ | ---------------- |
+| ホーム     | 0.25 以上 | 9.5 s      | 520 KB     | 1.3 MB | 7.5 s            |
+| 他のページ | 0.8 以上  | 4.4 s      | 240 KB     | 850 KB | 450 ms           |
 
-Layout shift stays at 0.1 or less everywhere. The home page values are loose on purpose: the scene is software rendered on the CI (blocking time 4 to 6 seconds, against about 0.2 seconds on real hardware). They guard against a large regression and are lowered when the cost of the scene drops.
+レイアウトのずれは、全てのページで 0.1 以下に保つ。ホームの値は意図して緩くしてあり、CI ではシーンをソフトウェアで描くためである(ブロッキング時間は 4〜6 秒、実機では約 0.2 秒)。大きな性能低下を防ぎ、シーンの負荷が下がったら予算も下げる。
 
-- The latin fonts (a condensed sans and a mono) are preloaded. The Japanese font is not, and all fonts use `display: swap`. The fonts are not self-hosted and not subset: the Japanese family has about 490 small files, the fetch from the font host has not failed a CI build (it failed once in a local clean copy), and the page already ships only the slices it uses.
-- The simulated largest paint (3.2 to 3.6 s on the home page) is not the real one: the observed value is 0.2 to 0.4 s. The budgets use the simulated value because it is what a pull request can compare.
+- 欧文フォント(幅の狭いサンセリフと等幅)は先に読み込む。日本語フォントは先に読み込まず、全てのフォントで `display: swap` を使う。フォントは自己配信せず、サブセット化もしないのは、日本語の書体群には約 490 個の小さいファイルがあり、フォントのホストからの取得で CI のビルドが失敗したことは無く(手元のクリーンコピーでは 1 回失敗した)、ページはすでに使う断片だけを配信しているためである。
+- 模擬した最大の描画(ホームで 3.2〜3.6 s)は実際の値ではなく、観測値は 0.2〜0.4 s である。プルリクエストで比較できる値なので、予算には模擬した値を使う。
 
-## Measurements behind the decision
+## 判断の根拠となる測定値
 
-- Starting the scene in an idle period instead of on mount stabilized the CI result of the home page (score 0.3 to 0.62 before, 0.60 to 0.62 after; largest paint 3.2 to 8.3 s before, 3.2 to 3.3 s after).
-- 66 of the 68 KB of render-blocking CSS are the font-face rules of the Japanese family. Dropping the bold weight saves 221 KB of transfer but did not change the simulated largest paint, so it was not done.
-- A first set of budgets taken from a laptop failed twice on the CI; the lesson is to set budgets from the CI report.
+- シーンをマウント時ではなくアイドル時間に始めると、CI のホームの結果が安定した(スコアは変更前が 0.3〜0.62、変更後が 0.60〜0.62、最大の描画は変更前が 3.2〜8.3 s、変更後が 3.2〜3.3 s)。
+- 描画を妨げる CSS のうち 66 KB は日本語の書体群の font-face ルールであり、全体は 68 KB である。太字のウェイトを外すと転送量が 221 KB 減るが、模擬した最大の描画は変わらなかったので、採用しなかった。
+- ノートパソコンの値から最初に決めた予算は CI で 2 回失敗し、CI のレポートから予算を決めるべきだと分かった。
 
-## Consequences
+## 結果
 
-- Good: a performance regression shows up in the pull request with a report; the numbers have a recorded source.
-- Bad: the home page budgets are weak until the software rendering cost is reduced; the simulated largest paint stays above the 2.5 s target.
+- 良い: 性能の低下がプルリクエストでレポートとともに分かり、数値の出典が記録されている。
+- 悪い: ソフトウェア描画の負荷が減るまではホームの予算が緩く、模擬した最大の描画は目標の 2.5 s を上回ったままである。
 
-## Alternatives considered
+## 検討した代替案
 
-- Self-hosting or subsetting the Japanese font: about 490 files, no failure to fix, and the fallback adjustment of the font loader would be lost.
-- Dropping the bold Japanese weight: saves 221 KB but changes the look and not the largest paint.
-- Budgets taken from a laptop: they failed on the CI twice.
-- Measuring only by hand: a regression would reach the main branch unnoticed.
+- 日本語フォントの自己配信またはサブセット化: 約 490 個のファイルがあり、直すべき失敗も無く、フォントローダーによる代替フォントの調整も失われる。
+- 日本語の太字ウェイトを外す: 221 KB 減るが、見た目が変わり、最大の描画は変わらない。
+- ノートパソコンの値から決めた予算: CI で 2 回失敗した。
+- 手作業だけで測定する: 性能の低下が、気づかれずに main ブランチに入る。
 
-## Revisit when
+## 見直す条件
 
-- The scene gets cheaper to draw (lower the home page budgets in the same change).
-- A font fetch ever fails a build (first add a retry of the build, then consider self-hosting).
+- シーンの描画の負荷が下がる(同じ変更でホームの予算を下げる)。
+- フォントの取得でビルドが失敗する(まずビルドの再試行を足し、そのあと自己配信を検討する)。
