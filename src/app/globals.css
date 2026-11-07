@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --surface: #ffffff;
+  --ink: #0a0a0a;
+  --muted: #595959;
+  --rule: #d4d4d4;
+  --control: #8a8a8a;
+  --signal: #b93a00;
+  --link: #0550ae;
+}
+
+.dark {
+  --surface: #050505;
+  --ink: #f2f2f2;
+  --muted: #a3a3a3;
+  --rule: #2e2e2e;
+  --control: #6b6b6b;
+  --signal: #ff7a3d;
+  --link: #79b8ff;
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-control: var(--control);
+  --color-signal: var(--signal);
+  --color-link: var(--link);
+  --font-display: var(--font-plex-condensed), sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-sans: var(--font-plex-jp), sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 3.5rem;
+  }
+  body {
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-sans);
+  }
+  ::selection {
+    background: var(--ink);
+    color: var(--surface);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --muted: #3d3d3d;
+    --rule: #595959;
+    --control: #4d4d4d;
+  }
+  .dark {
+    --muted: #c8c8c8;
+    --rule: #8a8a8a;
+    --control: #a3a3a3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
