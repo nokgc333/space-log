@@ -1,7 +1,11 @@
 {
   "required_status_checks": {
     "strict": false,
-    "contexts": ["Lint, typecheck, format, unit test, build", "E2E"]
+    "contexts": [
+      "Lint, typecheck, format, unit test, build",
+      "E2E",
+      "Performance Budget"
+    ]
   },
   "enforce_admins": false,
   "required_pull_request_reviews": null,
