@@ -53,6 +53,15 @@ describe("PipelineSection", () => {
     );
   });
 
+  it("never wraps the stage name or the tool, and sets its text without rounding the width of each letter", () => {
+    render(<PipelineSection pipeline={PIPELINE} />);
+    const list = screen.getAllByRole("list")[0];
+    expect(list.className).toContain("[text-rendering:geometricPrecision]");
+    const [first] = screen.getAllByRole("button", { name: /first/i });
+    for (const part of [...first.children])
+      expect(part).toHaveClass("whitespace-nowrap");
+  });
+
   it("selects the first stage at first", () => {
     render(<PipelineSection pipeline={PIPELINE} />);
     expect(screen.getByRole("button", { name: /FIRST/ })).toHaveAttribute(
@@ -110,5 +119,28 @@ describe("PipelineSection", () => {
     fireEvent.click(screen.getByRole("button", { name: /SECOND/ }));
     const log = screen.getByRole("log", { name: "Execution log" });
     expect(log.textContent).toBe("$ tool-two");
+  });
+
+  it("keeps the replay box the same height for every stage (that of the longest output)", () => {
+    render(<PipelineSection pipeline={PIPELINE} />);
+    const reserved = () =>
+      screen.getByRole("log").style.getPropertyValue("--reserved-lines");
+    expect(reserved()).toBe("4");
+    fireEvent.click(screen.getByRole("button", { name: /SECOND/ }));
+    expect(reserved()).toBe("4");
+    fireEvent.click(screen.getByRole("button", { name: /FIRST/ }));
+    expect(reserved()).toBe("4");
+  });
+
+  it("keeps every stage's description in the same place, hidden unless chosen, so the height does not change", () => {
+    render(<PipelineSection pipeline={PIPELINE} />);
+    const descriptionOf = (text: string) =>
+      screen.getByText(text).parentElement;
+    expect(descriptionOf("detail one")).toHaveAttribute("aria-hidden", "false");
+    expect(descriptionOf("detail two")).toHaveAttribute("aria-hidden", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: /SECOND/ }));
+    expect(descriptionOf("detail one")).toHaveAttribute("aria-hidden", "true");
+    expect(descriptionOf("detail two")).toHaveAttribute("aria-hidden", "false");
   });
 });
