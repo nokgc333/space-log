@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { site } from "@content/site";
 
@@ -300,5 +300,198 @@ test("the section frame and the INVERSION statements keep their gaps and their v
     expect(values.justify).toBe("center");
     expect(values.lead).toBeCloseTo(1.5, 2);
     expect(values.main).toBeCloseTo(1.45, 2);
+  }
+});
+
+test("every text of the footer has the text size of the privacy policy link, at every screen size", async ({
+  page,
+}) => {
+  for (const width of [1440, 1024, 1023, 375, 320]) {
+    await openAt(page, width, 900);
+    const sizes = await page.evaluate(() => {
+      const footer = document.querySelector("footer") as HTMLElement;
+      const link = footer.querySelector("a") as HTMLElement;
+      return {
+        link: parseFloat(getComputedStyle(link).fontSize),
+        texts: [...footer.querySelectorAll("p")].map((paragraph) =>
+          parseFloat(getComputedStyle(paragraph).fontSize),
+        ),
+      };
+    });
+    expect(sizes.link).toBe(12);
+    expect(sizes.texts).toHaveLength(2);
+    for (const size of sizes.texts) expect(size).toBe(sizes.link);
+  }
+});
+
+test("up to 1023px each part of the footer is centered from left to right", async ({
+  page,
+}) => {
+  for (const width of [1023, 768, 375, 320]) {
+    await openAt(page, width, 800);
+    const offsets = await page.evaluate(() => {
+      const footer = document.querySelector("footer") as HTMLElement;
+      const middle = footer.getBoundingClientRect().width / 2;
+      const parts = [
+        ...footer.querySelectorAll("p"),
+        footer.querySelector("a") as HTMLElement,
+      ];
+      return parts.map((part) => {
+        const box = part.getBoundingClientRect();
+        return box.left + box.width / 2 - middle;
+      });
+    });
+    expect(offsets).toHaveLength(3);
+    for (const offset of offsets)
+      expect(Math.abs(offset)).toBeLessThanOrEqual(1);
+  }
+  for (const width of [1024, 1440]) {
+    await openAt(page, width, 800);
+    const parts = page.locator("footer p");
+    const first = await boxOf(parts.nth(0));
+    const second = await boxOf(parts.nth(1));
+    expect(second.x).toBeGreaterThan(first.x + first.width - 1);
+    const style = await page.evaluate(() => {
+      const frame = document.querySelector("footer > div") as HTMLElement;
+      const links = frame.lastElementChild as HTMLElement;
+      return {
+        textAlign: getComputedStyle(frame).textAlign,
+        frameItems: getComputedStyle(frame).alignItems,
+        linksItems: getComputedStyle(links).alignItems,
+      };
+    });
+    expect(["start", "left"]).toContain(style.textAlign);
+    expect(style.frameItems).toBe("flex-start");
+    expect(style.linksItems).toBe("flex-end");
+  }
+});
+
+const headingSizes = (page: Page, id: string) =>
+  page.evaluate((sectionId) => {
+    const scope = document.querySelector(`#${sectionId}`) as HTMLElement;
+    const header = scope.querySelector("header") as HTMLElement;
+    const [label, title, subtitle] = [
+      header.querySelector("p:first-of-type"),
+      header.querySelector("h1, h2"),
+      header.querySelector("h1, h2")?.nextElementSibling,
+    ].map((element) =>
+      parseFloat(getComputedStyle(element as HTMLElement).fontSize),
+    );
+    return { label, title, subtitle, width: header.clientWidth };
+  }, id);
+
+test("up to 1023px only the hero heading is enlarged to 1.5 times, capped to fit its width", async ({
+  page,
+}) => {
+  const cases = [
+    { width: 1023, title: 72 },
+    { width: 768, title: 72 },
+    { width: 767, title: 54 },
+    { width: 600, title: 54 },
+    { width: 375, title: 54 },
+    { width: 320, title: 54 },
+  ];
+  for (const { width, title } of cases) {
+    await openAt(page, width, 900);
+    const hero = await headingSizes(page, "hero");
+    expect(hero.label).toBeCloseTo(Math.min(18, hero.width * 0.098), 1);
+    expect(hero.title).toBeCloseTo(Math.min(title, hero.width * 0.156), 1);
+    expect(hero.subtitle).toBe(21);
+
+    const plainTitle = width >= 768 ? 48 : 36;
+    for (const id of ["inversion", "news", "pipeline", "tools", "contact"]) {
+      const sizes = await headingSizes(page, id);
+      expect(sizes.label).toBe(12);
+      expect(sizes.title).toBe(plainTitle);
+      expect(sizes.subtitle).toBe(14);
+    }
+  }
+});
+
+test("from 1024px every heading keeps its own sizes, the hero heading too", async ({
+  page,
+}) => {
+  for (const width of [1024, 1440]) {
+    await openAt(page, width, 900);
+    for (const id of [
+      "hero",
+      "inversion",
+      "news",
+      "pipeline",
+      "tools",
+      "contact",
+    ]) {
+      const sizes = await headingSizes(page, id);
+      expect(sizes.label).toBe(12);
+      expect(sizes.title).toBe(48);
+      expect(sizes.subtitle).toBe(14);
+    }
+  }
+});
+
+test("up to 1023px no heading text sticks out of its header, and the page never scrolls sideways", async ({
+  page,
+}) => {
+  for (const width of [1023, 768, 767, 600, 520, 375, 320]) {
+    await openAt(page, width, 900);
+    const stuckOut = await page.evaluate(() =>
+      [...document.querySelectorAll("section > header, section header")]
+        .flatMap((header) => [...header.querySelectorAll("p, h1, h2")])
+        .filter((element) => element.scrollWidth > element.clientWidth + 1)
+        .map((element) => element.textContent),
+    );
+    expect(stuckOut).toEqual([]);
+    const sideways = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    );
+    expect(sideways).toBe(false);
+  }
+});
+
+test("from 1024px the hero heading starts where the section headings start", async ({
+  page,
+}) => {
+  for (const width of [1920, 1440, 1024]) {
+    await openAt(page, width, 900);
+    const hero = await boxOf(page.getByRole("heading", { level: 1 }));
+    const section = await boxOf(
+      page.getByRole("heading", { level: 2 }).first(),
+    );
+    expect(Math.abs(hero.x - section.x)).toBeLessThanOrEqual(1);
+  }
+});
+
+test("the section frames keep 48px of side padding on every screen size", async ({
+  page,
+}) => {
+  for (const width of [320, 375, 519, 520, 767, 768, 1024, 1440, 1920]) {
+    await openAt(page, width, 900);
+    const paddings = await page
+      .locator(
+        ["inversion", "news", "pipeline", "tools", "contact"]
+          .map((id) => `#${id} > div`)
+          .join(", "),
+      )
+      .evaluateAll((frames) =>
+        frames.map((frame) => {
+          const style = getComputedStyle(frame);
+          return [
+            parseFloat(style.paddingLeft),
+            parseFloat(style.paddingRight),
+          ];
+        }),
+      );
+    expect(paddings).toHaveLength(5);
+    for (const [left, right] of paddings) {
+      expect(left).toBe(48);
+      expect(right).toBe(48);
+    }
+    const headingX = await page
+      .locator("#inversion h2")
+      .evaluate((heading) => heading.getBoundingClientRect().left);
+    if (width >= 1024)
+      expect(headingX).toBe(Math.max(0, (width - 1280) / 2) + 48);
   }
 });
