@@ -172,6 +172,36 @@ describe("ContactForm", () => {
       );
     });
 
+    it("empties the form after a successful send", async () => {
+      setup({ ok: true, mode: "sent" });
+      await fillValid();
+      await send();
+      await screen.findByRole("status");
+      expect(field("name")).toHaveValue("");
+      expect(field("message")).toHaveValue("");
+      expect(field("consent")).not.toBeChecked();
+    });
+
+    it("asks to wait when too many were sent", async () => {
+      setup({ ok: false, kind: "rate-limited", retryAfterSeconds: 30 });
+      await fillValid();
+      await send();
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        CONTACT.results.rateLimited,
+      );
+    });
+
+    it("keeps what was typed and explains when sending fails", async () => {
+      setup({ ok: false, kind: "failed" });
+      await fillValid();
+      await send();
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        CONTACT.results.failed,
+      );
+      expect(field("name")).toHaveValue("山田 太郎");
+      expect(field("message")).toHaveValue("相談です");
+    });
+
     it("treats a thrown network error like a failed send", async () => {
       setup(new Error("offline"));
       await fillValid();
@@ -180,6 +210,39 @@ describe("ContactForm", () => {
         CONTACT.results.failed,
       );
       expect(field("name")).toHaveValue("山田 太郎");
+    });
+
+    it("shows the server's messages at the fields it found wrong", async () => {
+      setup({
+        ok: false,
+        kind: "invalid",
+        errors: { email: "server: bad email" },
+      });
+      await fillValid();
+      await send();
+      expect(await screen.findByText("server: bad email")).toBeInTheDocument();
+      expect(field("email")).toHaveAttribute("aria-invalid", "true");
+    });
+
+    it("clears the last answer as soon as it sends again", async () => {
+      let finish: (value: SubmitContactResult) => void = () => {};
+      const submit = vi
+        .fn()
+        .mockResolvedValueOnce({ ok: false, kind: "failed" })
+        .mockReturnValueOnce(
+          new Promise<SubmitContactResult>((resolve) => {
+            finish = resolve;
+          }),
+        );
+      render(<ContactForm contact={CONTACT} submit={submit} />);
+      await fillValid();
+      await send();
+      await screen.findByRole("alert");
+      await send();
+      await screen.findByRole("button", { name: CONTACT.sending });
+      expect(screen.queryByRole("alert")).toBeNull();
+      finish({ ok: true, mode: "demo" });
+      await screen.findByRole("status");
     });
   });
 
