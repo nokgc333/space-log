@@ -95,6 +95,20 @@ describe("the end-to-end job", () => {
   });
 });
 
+describe("pre-push checks", () => {
+  it("runs the quick checks (lint, types, format, unit tests) before every push", () => {
+    expect(read(".husky/pre-push")).toContain("npm run check");
+  });
+
+  it("makes npm run check cover lint, types, format and the unit tests", () => {
+    const check: string = json("package.json").scripts.check;
+
+    for (const step of ["lint", "typecheck", "format:check", "test"]) {
+      expect(check, step).toContain(`npm run ${step}`);
+    }
+  });
+});
+
 describe("the letter-width stress check", () => {
   const spec = read("e2e/text-metrics.spec.ts");
 
@@ -107,6 +121,32 @@ describe("the letter-width stress check", () => {
     for (const width of ["320", "375", "1023", "1024", "1440"]) {
       expect(spec, width).toContain(width);
     }
+  });
+});
+
+describe("pre-commit checks", () => {
+  it("runs lint-staged from the husky pre-commit hook", () => {
+    expect(read(".husky/pre-commit")).toContain("lint-staged");
+  });
+
+  it("enables the hooks on install", () => {
+    expect(json("package.json").scripts.prepare).toBe("husky");
+  });
+
+  it("checks every staged file for secrets and formats code", () => {
+    const config = json(".lintstagedrc.json");
+    const code = config["*.{ts,tsx,mjs,mts,cjs}"].join(" ");
+
+    expect(config["*"]).toContain("secretlint");
+    expect(code).toContain("eslint");
+    expect(code).toContain("prettier");
+  });
+
+  it("uses the recommended secretlint rules and skips generated files", () => {
+    expect(json(".secretlintrc.json").rules[0].id).toBe(
+      "@secretlint/secretlint-rule-preset-recommend",
+    );
+    expect(read(".secretlintignore")).toContain("package-lock.json");
   });
 });
 
