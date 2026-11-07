@@ -2,15 +2,31 @@
 
 import { useState } from "react";
 
+import { Pager } from "@/components/ui/pager";
 import { SectionFrame } from "@/components/ui/section-frame";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { usePagination } from "@/components/ui/use-pagination";
 import type { Tools } from "@/lib/content";
 
-import { ToolRow, ToolsTableHead } from "./tool-row";
+import { FillerRows, ToolRow, ToolsTableHead } from "./tool-row";
+
+export const TOOLS_PER_PAGE = 5;
 
 export function ToolsSection({ tools }: { tools: Tools }) {
   const [openId, setOpenId] = useState<string | null>(null);
-  const { columns, toggleLabels, repoLinkLabel } = tools;
+  const { columns, toggleLabels, pager, repoLinkLabel } = tools;
+  const {
+    page,
+    pageCount,
+    items: visible,
+    fillerCount,
+    goTo,
+  } = usePagination(tools.entries, TOOLS_PER_PAGE);
+
+  const changePage = (nextPage: number) => {
+    goTo(nextPage);
+    setOpenId(null);
+  };
 
   return (
     <SectionFrame id="tools">
@@ -26,7 +42,7 @@ export function ToolsSection({ tools }: { tools: Tools }) {
             </colgroup>
             <ToolsTableHead columns={columns} />
             <tbody>
-              {tools.entries.map((entry) => (
+              {visible.map((entry) => (
                 <ToolRow
                   key={entry.id}
                   entry={entry}
@@ -38,9 +54,17 @@ export function ToolsSection({ tools }: { tools: Tools }) {
                   toggleLabels={toggleLabels}
                 />
               ))}
+              <FillerRows count={fillerCount} />
             </tbody>
           </table>
         </div>
+
+        <Pager
+          page={page}
+          pageCount={pageCount}
+          labels={pager}
+          onChange={changePage}
+        />
       </div>
     </SectionFrame>
   );
