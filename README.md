@@ -21,3 +21,9 @@ MIT。詳細は [LICENSE](LICENSE) を参照してください。
 - `npm run format:check` で整形を検査します。
 - 開発サーバーの `/` で空の main が描画されることを確認します。
 - 本番ビルド後に `npm start` を実行し、`/` が表示されることを確認します。
+
+## 本番レスポンスの確認
+
+- `npm run build` と `npm start` を実行します。
+- `curl -I http://localhost:3000/` と `curl -I http://localhost:3000/privacy` で CSP、Referrer-Policy、X-Content-Type-Options などのヘッダーを確認します。
+- ブラウザーの開発者ツールで `/_next/static/` の JavaScript を開き、末尾の sourceMappingURL に対応する `.map` が取得できることを確認します。
