@@ -76,3 +76,21 @@ test("the menu on a phone opens, leads to a section and closes", async ({
   await expect(page.locator("#tools")).toBeInViewport();
   await expect(menu).toHaveAttribute("aria-expanded", "false");
 });
+
+test("the menu on a phone closes with Escape and gives the focus back", async ({
+  page,
+}) => {
+  await openAt(page, 375, 800);
+  const menu = page.getByRole("button", { name: site.menuLabel });
+  await menu.click();
+  await page
+    .getByRole("navigation", { name: site.menuLabel })
+    .last()
+    .getByRole("link")
+    .first()
+    .focus();
+  await expect(menu).not.toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toBeFocused();
+});
