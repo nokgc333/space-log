@@ -76,3 +76,31 @@ describe("Dependabot", () => {
     expect(config).toMatch(/typescript\s+versions: \[">=6\.1\.0"\]/);
   });
 });
+
+describe("branch protection policy", () => {
+  const jobNames = fs
+    .readdirSync(path.join(process.cwd(), ".github", "workflows"))
+    .filter((file) => file.endsWith(".yml"))
+    .flatMap((file) =>
+      [
+        ...read(`.github/workflows/${file}`).matchAll(/^\s{4}name: (.+)$/gm),
+      ].map((m) => m[1].trim()),
+    );
+
+  it("requires only checks that really exist as jobs", () => {
+    const required = json(".github/branch-protection/main.json")
+      .required_status_checks.contexts;
+
+    expect(required.length).toBeGreaterThan(0);
+    for (const name of required) {
+      expect(jobNames, name).toContain(name);
+    }
+  });
+
+  it("forbids force pushes and deletions on main", () => {
+    const policy = json(".github/branch-protection/main.json");
+
+    expect(policy.allow_force_pushes).toBe(false);
+    expect(policy.allow_deletions).toBe(false);
+  });
+});
