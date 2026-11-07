@@ -145,4 +145,119 @@ test.describe("the contact form", () => {
     await expect(field(page, "email")).toHaveAttribute("aria-invalid", "true");
     expect(posts.value).toBe(0);
   });
+
+  test("cannot be sent twice while the first send is on its way", async ({
+    page,
+  }) => {
+    const posts = countActionPosts(page);
+    await page.route("**/", async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      return route.continue();
+    });
+    await page.goto("/#contact");
+    await fillValid(page);
+    await send(page);
+
+    const sending = page.getByRole("button", { name: contact.sending });
+    await expect(sending).toBeDisabled();
+    await field(page, "message").press("Enter");
+    await field(page, "name").press("Enter");
+    await expect(outcome(page, "status")).toHaveText(contact.results.demo);
+    expect(posts.value).toBe(1);
+    await expect(
+      page.getByRole("button", { name: contact.submit }),
+    ).toBeEnabled();
+  });
+
+  test("keeps what was typed and says so when the connection fails", async ({
+    page,
+  }) => {
+    await page.route("**/", (route) =>
+      route.request().method() === "POST"
+        ? route.abort("failed")
+        : route.continue(),
+    );
+    await page.goto("/#contact");
+    await fillValid(page);
+    await send(page);
+    await expect(outcome(page, "alert")).toHaveText(contact.results.failed);
+    await expect(field(page, "name")).toHaveValue("山田 太郎");
+    await expect(field(page, "message")).toHaveValue("相談です");
+    await expect(field(page, "consent")).toBeChecked();
+    await expect(
+      page.getByRole("button", { name: contact.submit }),
+    ).toBeEnabled();
+  });
+
+  test("clears the answer of the last try as soon as the next one starts", async ({
+    page,
+  }) => {
+    let attempt = 0;
+    await page.route("**/", async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      attempt += 1;
+      if (attempt === 1) return route.abort("failed");
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      return route.continue();
+    });
+    await page.goto("/#contact");
+    await fillValid(page);
+    await send(page);
+    await expect(outcome(page, "alert")).toHaveText(contact.results.failed);
+
+    await send(page);
+    await expect(
+      page.getByRole("button", { name: contact.sending }),
+    ).toBeDisabled();
+    await expect(outcome(page, "alert")).toHaveCount(0, { timeout: 300 });
+    await expect(outcome(page, "status")).toHaveText(contact.results.demo);
+  });
+
+  test("answers an entry with the hidden trap field filled like any other", async ({
+    page,
+  }) => {
+    await page.goto("/#contact");
+    await fillValid(page);
+    await page.evaluate(() => {
+      const trap = document.querySelector<HTMLInputElement>(
+        'input[name="website"]',
+      );
+      if (!trap) throw new Error("the trap field is missing");
+      trap.value = "http://spam.example";
+    });
+    await send(page);
+    await expect(outcome(page, "status")).toHaveText(contact.results.demo);
+  });
+});
+
+test.describe("the contact form's limit on how often one visitor can send", () => {
+  test("turns the sixth entry away within ten minutes, and lets others in", async ({
+    page,
+    browser,
+  }) => {
+    await page.goto("/#contact");
+    for (let attempt = 1; attempt <= 5; attempt += 1) {
+      await fillValid(page);
+      await send(page);
+      await expect(outcome(page, "status")).toHaveText(contact.results.demo);
+    }
+    await fillValid(page);
+    await send(page);
+    await expect(outcome(page, "alert")).toHaveText(
+      contact.results.rateLimited,
+    );
+    await expect(field(page, "name")).toHaveValue("山田 太郎");
+
+    const other = await browser.newContext({
+      baseURL: new URL(page.url()).origin,
+      extraHTTPHeaders: uniqueVisitorHeaders(),
+    });
+    const otherPage = await other.newPage();
+    await otherPage.goto("/#contact");
+    await fillValid(otherPage);
+    await send(otherPage);
+    await expect(outcome(otherPage, "status")).toHaveText(contact.results.demo);
+    await other.close();
+  });
 });
