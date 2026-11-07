@@ -95,6 +95,21 @@ describe("the end-to-end job", () => {
   });
 });
 
+describe("the letter-width stress check", () => {
+  const spec = read("e2e/text-metrics.spec.ts");
+
+  it("still widens every letter by about 10% where the layout is measured", () => {
+    expect(spec).toContain("letter-spacing: 0.055em");
+    expect(spec).toContain("about 10% wider");
+  });
+
+  it("covers the narrowest and the widest layouts", () => {
+    for (const width of ["320", "375", "1023", "1024", "1440"]) {
+      expect(spec, width).toContain(width);
+    }
+  });
+});
+
 describe("branch protection policy", () => {
   const jobNames = fs
     .readdirSync(path.join(process.cwd(), ".github", "workflows"))
