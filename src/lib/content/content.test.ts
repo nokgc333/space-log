@@ -48,10 +48,38 @@ describe("content", () => {
     expect(toolsSchema.safeParse(broken).success).toBe(false);
   });
 
+  it("rejects a tool without tags", () => {
+    const entry = { ...rawTools.entries[0], tags: [] };
+    const broken = { ...rawTools, entries: [entry] };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a tools section without any tool", () => {
+    const broken = { ...rawTools, entries: [] };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
+  });
+
   it("accepts a tool without a repository url", () => {
     const entry = { ...rawTools.entries[0], repoUrl: undefined };
     const ok = { ...rawTools, entries: [entry] };
     expect(toolsSchema.safeParse(ok).success).toBe(true);
+  });
+
+  it.each([
+    "http://github.com/nokgc333/pipeinit",
+    "https://example.com/nokgc333/pipeinit",
+    "https://github.com.example.com/nokgc333/pipeinit",
+    "javascript:alert(1)",
+    "github.com/nokgc333/pipeinit",
+  ])("rejects the repository url %s", (repoUrl) => {
+    const entry = { ...rawTools.entries[0], repoUrl };
+    const broken = { ...rawTools, entries: [entry] };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects a repository link label that has no place for the tool name", () => {
+    const broken = { ...rawTools, repoLinkLabel: "GitHubリポジトリ" };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
   });
 
   it("rejects a site url that is not a url", () => {
@@ -85,9 +113,33 @@ describe("content", () => {
       expect(inversionSchema.safeParse(withBody(body)).success).toBe(true);
     });
 
+    it("rejects a statement whose tail is empty", () => {
+      expect(
+        inversionSchema.safeParse(withBody([{ main: "main", tail: "" }]))
+          .success,
+      ).toBe(false);
+    });
+
     it("rejects a highlighted phrase that is not in the main text", () => {
       const body = [{ main: "main text", highlight: "elsewhere" }];
       expect(inversionSchema.safeParse(withBody(body)).success).toBe(false);
+    });
+
+    it("rejects a statement whose main text is empty", () => {
+      expect(inversionSchema.safeParse(withBody([{ main: "" }])).success).toBe(
+        false,
+      );
+    });
+
+    it("rejects a statement whose lead is empty", () => {
+      expect(
+        inversionSchema.safeParse(withBody([{ lead: "", main: "main" }]))
+          .success,
+      ).toBe(false);
+    });
+
+    it("rejects a section without statements", () => {
+      expect(inversionSchema.safeParse(withBody([])).success).toBe(false);
     });
 
     it("keeps the real statements free of newlines", () => {
