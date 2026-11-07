@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import type { ContactMessages } from "@/lib/content";
 
@@ -31,6 +32,10 @@ function messageOf(input: unknown, field: string): string | undefined {
 }
 
 describe("contact schema", () => {
+  it("tells zod not to probe for eval, which a strict content security policy reports", () => {
+    expect(z.config().jitless).toBe(true);
+  });
+
   it("accepts a complete entry with an empty optional company", () => {
     expect(schema.safeParse(VALID).success).toBe(true);
   });
@@ -45,11 +50,38 @@ describe("contact schema", () => {
     expect(result.success && result.data.message).toBe("内容");
   });
 
+  it("fills in the trap field when it is missing", () => {
+    const withoutTrap = Object.fromEntries(
+      Object.entries(VALID).filter(([key]) => key !== "website"),
+    );
+    const result = schema.safeParse(withoutTrap);
+    expect(result.success && result.data.website).toBe("");
+  });
+
   describe("required fields", () => {
     it.each(["name", "email", "message"])("asks for %s", (field) => {
       expect(messageOf({ ...VALID, [field]: "   " }, field)).toBe(
         MESSAGES.required,
       );
+    });
+  });
+
+  describe("email", () => {
+    it.each([
+      "taro@",
+      "taro",
+      "@example.com",
+      "taro@example",
+      "a b@example.com",
+    ])("rejects %s", (email) => {
+      expect(messageOf({ ...VALID, email }, "email")).toBe(MESSAGES.email);
+    });
+
+    it("accepts an address with a plus tag and a sub-domain", () => {
+      expect(
+        schema.safeParse({ ...VALID, email: "taro+a@mail.example.co.jp" })
+          .success,
+      ).toBe(true);
     });
   });
 
@@ -95,6 +127,12 @@ describe("contact schema", () => {
       expect(
         messageOf({ ...VALID, message: "あ".repeat(2001) }, "message"),
       ).toBe(MESSAGES.tooLong);
+    });
+
+    it("rejects a trap field longer than 200 characters", () => {
+      expect(
+        schema.safeParse({ ...VALID, website: "x".repeat(201) }).success,
+      ).toBe(false);
     });
   });
 
