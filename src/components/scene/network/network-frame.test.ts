@@ -1,5 +1,5 @@
 import { Color, Matrix4, PerspectiveCamera, Vector3 } from "three";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { stepParticles } from "../particle-physics";
 import {
   createNetworkState,
@@ -24,6 +24,7 @@ const view = {
   worldHeight: 5.8,
   matrix: matrix.elements,
 };
+const UP = new Vector3(0, 1, 0);
 const idle = () => ({
   x: 0,
   y: 0,
@@ -32,6 +33,8 @@ const idle = () => ({
   clickY: 0,
   pendingClick: false,
 });
+
+const LONG_SIMULATION_MS = 30_000;
 
 const rgbOf = (hex: string) => {
   const { r, g, b } = new Color(hex);
@@ -116,6 +119,56 @@ describe("stepNetworkFrame", () => {
     expect(n.palette.signal).toEqual(rgbOf(PALETTE.dark.signal));
     expect(input.pendingClick).toBe(false);
   });
+  it(
+    "runs idle ripples and accepts clicks when 720 frames advance without reallocating",
+    { timeout: LONG_SIMULATION_MS },
+    () => {
+      const n = createNetworkState(false),
+        input = idle();
+      const arrays = () => [
+        n.buffers.positions,
+        n.buffers.velocities,
+        n.nodeColors,
+        n.edgePositions,
+        n.edgeColors,
+        n.activity.values,
+        n.activity.next,
+      ];
+      const buffers = arrays();
+      let idleWasActive = false;
+      for (let frame = 0; frame < 720; frame++) {
+        if (frame === 300) {
+          Object.assign(input, {
+            x: 0,
+            y: 0,
+            inside: true,
+            clickX: 0,
+            clickY: 0,
+            pendingClick: true,
+          });
+        }
+        stepNetworkFrame(n, input, {
+          isDark: frame > 400,
+          frameLoop: "always",
+          view,
+          elapsed: 1 / 60,
+        });
+        if (frame < 300 && n.activity.values.some((v) => v > 0))
+          idleWasActive = true;
+        if (frame === 300) {
+          expect(input.pendingClick).toBe(false);
+          expect(n.activity.strength).toBe(1);
+          expect(n.activity.hops.some((hop) => hop === 0)).toBe(true);
+        }
+        if (frame === 360) input.inside = false;
+        for (const buffer of buffers)
+          expect(buffer.every(Number.isFinite)).toBe(true);
+        expect(n.activity.values.every((v) => v >= 0 && v <= 1)).toBe(true);
+      }
+      expect(idleWasActive).toBe(true);
+      expect(arrays().every((buffer, i) => buffer === buffers[i])).toBe(true);
+    },
+  );
 });
 
 describe("signalMix", () => {
@@ -152,5 +205,90 @@ describe("pointerToLocal", () => {
       expect(world.z).toBeCloseTo(0, 6);
       expect(local.y).toBe(0.5);
     }
+  });
+});
+
+describe("pointer push while the cloud keeps turning", () => {
+  function meanDisplacement(
+    n: ReturnType<typeof createNetworkState>,
+    cursor: { x: number; y: number },
+    isNear: boolean,
+  ) {
+    const c = Math.cos(n.rotation);
+    const s = Math.sin(n.rotation);
+    const { positions, origins } = n.buffers;
+    let total = 0;
+    let count = 0;
+    for (let i = 0; i < origins.length; i += 3) {
+      const x = origins[i] * c + origins[i + 2] * s;
+      const z = -origins[i] * s + origins[i + 2] * c;
+      if (Math.abs(z) >= 1) continue;
+      const w = matrix.elements[11] * z + matrix.elements[15];
+      const sx = (matrix.elements[0] * x + matrix.elements[12]) / w;
+      const sy =
+        (matrix.elements[5] * origins[i + 1] + matrix.elements[13]) / w;
+      const pixels = Math.hypot(
+        ((sx - cursor.x) * view.width) / 2,
+        ((sy - cursor.y) * view.height) / 2,
+      );
+      if (isNear ? pixels > 70 : pixels < 250) continue;
+      total += Math.hypot(
+        positions[i] - origins[i],
+        positions[i + 1] - origins[i + 1],
+        positions[i + 2] - origins[i + 2],
+      );
+      count++;
+    }
+    return total / count;
+  }
+
+  it.each([0, 0.5, 1.0, 1.5])(
+    "pushes particles under the cursor after %s of a half turn",
+    (fraction) => {
+      const n = createNetworkState(false);
+      n.time = (Math.PI * fraction) / ROTATION_SPEED;
+      const cursor = { x: 0.2, y: 0.1 };
+      const input = { ...idle(), inside: true, ...cursor };
+      for (let frame = 0; frame < 90; frame++)
+        stepNetworkFrame(n, input, {
+          isDark: false,
+          frameLoop: "always",
+          view,
+          elapsed: 1 / 60,
+        });
+      const near = meanDisplacement(n, cursor, true);
+      const far = meanDisplacement(n, cursor, false);
+      expect(near).toBeGreaterThan(far * 5);
+    },
+  );
+
+  it("hits a particle when the center of the view is clicked, wherever the first particle starts", () => {
+    const aboveTheTop = [0.25, 0.5, 1];
+    const realRandom = Math.random.bind(Math);
+    let calls = 0;
+    const spy = vi
+      .spyOn(Math, "random")
+      .mockImplementation(() =>
+        calls < aboveTheTop.length ? aboveTheTop[calls++] : realRandom(),
+      );
+    const n = createNetworkState(false);
+    spy.mockRestore();
+    const first = new Vector3(...n.buffers.positions.slice(0, 3))
+      .applyAxisAngle(UP, n.rotation)
+      .project(camera);
+    expect(Math.abs(first.y)).toBeGreaterThan(1);
+
+    const input = {
+      ...idle(),
+      inside: true,
+      pendingClick: true,
+    };
+    stepNetworkFrame(n, input, {
+      isDark: true,
+      frameLoop: "always",
+      view,
+      elapsed: 1 / 60,
+    });
+    expect(n.activity.hops.some((hop) => hop === 0)).toBe(true);
   });
 });
