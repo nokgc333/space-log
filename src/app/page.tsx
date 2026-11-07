@@ -1,3 +1,13 @@
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
+import { site } from "@/lib/content";
+
 export default function Home() {
-  return <main />;
+  return (
+    <>
+      <SiteHeader site={site} />
+      <main id="main"></main>
+      <SiteFooter site={site} year={new Date().getFullYear()} />
+    </>
+  );
 }
