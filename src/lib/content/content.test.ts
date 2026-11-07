@@ -161,6 +161,73 @@ describe("content", () => {
           .success,
       ).toBe(false);
     });
+
+    it("rejects an empty paragraph", () => {
+      const broken = withSection({
+        heading: "h",
+        blocks: [{ kind: "paragraph", text: "" }],
+      });
+      expect(privacySchema.safeParse(broken).success).toBe(false);
+    });
+
+    it("rejects a list without items", () => {
+      const broken = withSection({
+        heading: "h",
+        blocks: [{ kind: "list", style: "bullet", items: [] }],
+      });
+      expect(privacySchema.safeParse(broken).success).toBe(false);
+    });
+
+    it("rejects a list item without text, at any depth", () => {
+      const broken = withSection({
+        heading: "h",
+        blocks: [
+          {
+            kind: "list",
+            style: "number",
+            items: [{ text: "a", children: [{ text: "" }] }],
+          },
+        ],
+      });
+      expect(privacySchema.safeParse(broken).success).toBe(false);
+    });
+
+    it("rejects a list item with an empty list of children", () => {
+      const broken = withSection({
+        heading: "h",
+        blocks: [
+          {
+            kind: "list",
+            style: "number",
+            items: [{ text: "a", children: [] }],
+          },
+        ],
+      });
+      expect(privacySchema.safeParse(broken).success).toBe(false);
+    });
+
+    it("rejects a list with an unknown style", () => {
+      const broken = withSection({
+        heading: "h",
+        blocks: [{ kind: "list", style: "roman", items: [{ text: "a" }] }],
+      });
+      expect(privacySchema.safeParse(broken).success).toBe(false);
+    });
+
+    it("rejects a block of an unknown kind", () => {
+      const broken = withSection({
+        heading: "h",
+        blocks: [{ kind: "image", text: "a" }],
+      });
+      expect(privacySchema.safeParse(broken).success).toBe(false);
+    });
+
+    it("rejects a date that is not a date", () => {
+      expect(
+        privacySchema.safeParse({ ...rawPrivacy, updated: "2026-13-40" })
+          .success,
+      ).toBe(false);
+    });
   });
 
   it("rejects a consent sentence that does not contain the text to link", () => {
