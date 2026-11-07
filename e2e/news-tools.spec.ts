@@ -79,6 +79,41 @@ for (const width of [1440, 375]) {
   });
 }
 
+test("the GitHub icon in front of a tool opens its repository in a new tab", async ({
+  page,
+  context,
+}) => {
+  await context.route("https://github.com/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<title>stub</title>",
+    }),
+  );
+  await page.goto("/");
+  const section = page.locator("#tools");
+  const entry = tools.entries[0];
+  if (!entry.repoUrl) throw new Error("the first tool needs a repository url");
+  const link = section.getByRole("link", {
+    name: tools.repoLinkLabel.replace("{name}", entry.name),
+  });
+  await link.scrollIntoViewIfNeeded();
+
+  const icon = await boxOf(link);
+  const name = await boxOf(section.getByRole("button", { name: entry.name }));
+  expect(icon.x + icon.width).toBeLessThanOrEqual(name.x);
+  expect(icon.width).toBeGreaterThanOrEqual(32);
+  expect(icon.height).toBeGreaterThanOrEqual(32);
+
+  const addressBefore = page.url();
+  const newTab = context.waitForEvent("page");
+  await link.click();
+  const opened = await newTab;
+  await opened.waitForLoadState();
+  expect(opened.url()).toBe(entry.repoUrl);
+  expect(page.url()).toBe(addressBefore);
+});
+
 test("the news are listed newest first", async ({ page }) => {
   await page.goto("/");
   const dates = await page
@@ -86,6 +121,30 @@ test("the news are listed newest first", async ({ page }) => {
     .evaluateAll((times) => times.map((time) => time.getAttribute("datetime")));
   expect(dates.length).toBeGreaterThan(1);
   expect(dates).toEqual([...dates].sort().reverse());
+});
+
+test("a tool's detail opens and closes with the keyboard, and the pager moves on", async ({
+  page,
+}) => {
+  await page.goto("/#tools");
+  const toggle = page.locator("#tools tbody tr button").first();
+  await toggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+  const next = page
+    .locator("#tools")
+    .getByRole("button", { name: tools.pager.next });
+  const previous = page
+    .locator("#tools")
+    .getByRole("button", { name: tools.pager.prev });
+  await expect(previous).toBeDisabled();
+  await next.focus();
+  await page.keyboard.press("Enter");
+  await expect(next).toBeDisabled();
+  await expect(previous).toBeEnabled();
 });
 
 const NEWS_FOLDER = path.join(process.cwd(), "content", "news");
@@ -135,4 +194,28 @@ test("the news list pages through every entry with the keyboard", async ({
   await page.keyboard.press("Enter");
   await expect(section.getByText(`1 / ${pageCount}`)).toBeVisible();
   expect(await items.allTextContents()).toEqual(firstPageTexts);
+});
+
+test("the pagers of the news list and the tools table sit at the left edge of their list", async ({
+  page,
+}) => {
+  await openDesktop(page);
+
+  const pagers = [
+    { id: "news", list: "ol", labels: news.pager },
+    { id: "tools", list: "table", labels: tools.pager },
+  ];
+  for (const { id, list, labels } of pagers) {
+    const section = page.locator(`#${id}`);
+    const listBox = await boxOf(section.locator(list));
+    const previous = await boxOf(
+      section.getByRole("button", { name: labels.prev }),
+    );
+    const next = await boxOf(
+      section.getByRole("button", { name: labels.next }),
+    );
+    expect(previous.x - listBox.x).toBeGreaterThanOrEqual(0);
+    expect(previous.x - listBox.x).toBeLessThanOrEqual(16);
+    expect(next.x + next.width - listBox.x).toBeLessThan(200);
+  }
 });
