@@ -3,19 +3,21 @@ import { describe, expect, it } from "vitest";
 import { inversion as rawInversion } from "@content/sections/inversion";
 import { news as rawNews } from "@content/sections/news";
 import { pipeline as rawPipeline } from "@content/sections/pipeline";
+import { tools as rawTools } from "@content/sections/tools";
 import { site as rawSite } from "@content/site";
 
-import { hero, inversion, news, pipeline, site } from "./index";
+import { hero, inversion, news, pipeline, site, tools } from "./index";
 import {
   inversionSchema,
   newsSchema,
   pipelineSchema,
   siteSchema,
+  toolsSchema,
 } from "./schema";
 
 describe("content", () => {
   it("loads every section", () => {
-    const sections = [site, hero, inversion, news, pipeline];
+    const sections = [site, hero, inversion, news, pipeline, tools];
     for (const section of sections) expect(section).toBeDefined();
   });
 
@@ -38,6 +40,18 @@ describe("content", () => {
     const first = rawPipeline.stages[0];
     const broken = { ...rawPipeline, stages: [first, first] };
     expect(pipelineSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("rejects two tools with the same id", () => {
+    const first = rawTools.entries[0];
+    const broken = { ...rawTools, entries: [first, first] };
+    expect(toolsSchema.safeParse(broken).success).toBe(false);
+  });
+
+  it("accepts a tool without a repository url", () => {
+    const entry = { ...rawTools.entries[0], repoUrl: undefined };
+    const ok = { ...rawTools, entries: [entry] };
+    expect(toolsSchema.safeParse(ok).success).toBe(true);
   });
 
   it("rejects a site url that is not a url", () => {
