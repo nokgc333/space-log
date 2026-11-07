@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { privacy as rawPrivacy } from "@content/privacy";
 import { contact as rawContact } from "@content/sections/contact";
 import { inversion as rawInversion } from "@content/sections/inversion";
 import { news as rawNews } from "@content/sections/news";
@@ -7,19 +8,38 @@ import { pipeline as rawPipeline } from "@content/sections/pipeline";
 import { tools as rawTools } from "@content/sections/tools";
 import { site as rawSite } from "@content/site";
 
-import { contact, hero, inversion, news, pipeline, site, tools } from "./index";
+import {
+  contact,
+  hero,
+  inversion,
+  news,
+  pipeline,
+  privacy,
+  site,
+  tools,
+} from "./index";
 import {
   contactContentSchema,
   inversionSchema,
   newsSchema,
   pipelineSchema,
+  privacySchema,
   siteSchema,
   toolsSchema,
 } from "./schema";
 
 describe("content", () => {
   it("loads every section", () => {
-    const sections = [site, hero, inversion, news, pipeline, tools, contact];
+    const sections = [
+      site,
+      hero,
+      inversion,
+      news,
+      pipeline,
+      tools,
+      contact,
+      privacy,
+    ];
     for (const section of sections) expect(section).toBeDefined();
   });
 
@@ -91,6 +111,56 @@ describe("content", () => {
 
   it("rejects an empty site name", () => {
     expect(siteSchema.safeParse({ ...rawSite, name: "" }).success).toBe(false);
+  });
+
+  describe("privacy policy", () => {
+    const withSection = (section: unknown) => ({
+      ...rawPrivacy,
+      sections: [section],
+    });
+    const paragraph = { kind: "paragraph", text: "text" };
+
+    it("accepts paragraphs and lists, nested as deep as written", () => {
+      const nested = withSection({
+        heading: "第1. h",
+        blocks: [
+          paragraph,
+          {
+            kind: "list",
+            style: "number",
+            items: [
+              {
+                text: "a",
+                children: [{ text: "a-1", children: [{ text: "a-1-1" }] }],
+              },
+              { text: "b" },
+            ],
+          },
+          { kind: "list", style: "bullet", items: [{ text: "c" }] },
+        ],
+      });
+      expect(privacySchema.safeParse(nested).success).toBe(true);
+    });
+
+    it("rejects a policy without a lead", () => {
+      const withoutLead = Object.fromEntries(
+        Object.entries(rawPrivacy).filter(([key]) => key !== "lead"),
+      );
+      expect(privacySchema.safeParse(withoutLead).success).toBe(false);
+    });
+
+    it("rejects a policy without any section", () => {
+      expect(
+        privacySchema.safeParse({ ...rawPrivacy, sections: [] }).success,
+      ).toBe(false);
+    });
+
+    it("rejects a section without blocks", () => {
+      expect(
+        privacySchema.safeParse(withSection({ heading: "h", blocks: [] }))
+          .success,
+      ).toBe(false);
+    });
   });
 
   it("rejects a consent sentence that does not contain the text to link", () => {
