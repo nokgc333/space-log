@@ -3,8 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LazyHeroScene } from "./lazy-hero-scene";
 
+const mocks = vi.hoisted(() => ({ shouldFail: false }));
+
 vi.mock("./network/network-scene", () => ({
   default: ({ frameLoop }: { frameLoop: string }) => {
+    if (mocks.shouldFail) throw new Error("no WebGL");
     return <div data-testid="scene" data-frame-loop={frameLoop} />;
   },
 }));
@@ -29,6 +32,7 @@ function stubReducedMotion(matches: boolean) {
 }
 
 beforeEach(() => {
+  mocks.shouldFail = false;
   stubReducedMotion(false);
   vi.stubGlobal(
     "IntersectionObserver",
@@ -109,5 +113,17 @@ describe("LazyHeroScene", () => {
       "data-frame-loop",
       "demand",
     );
+  });
+
+  it("shows the fallback text, and only warns in the log, when the scene cannot start", async () => {
+    mocks.shouldFail = true;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await renderHero();
+
+    expect(
+      await screen.findByText("The scene is not available."),
+    ).toBeVisible();
+    expect(warn).toHaveBeenCalled();
   });
 });
