@@ -74,6 +74,37 @@ describe("loadNewsEntries", () => {
     expect(loadNewsEntries(dir)[0].date).toBe("2026-01-02");
   });
 
+  it("skips files that are not markdown", () => {
+    write("2026-01-02-first.md", entryFile("2026-01-02"));
+    write(".DS_Store", "x");
+    write(".gitkeep", "");
+    expect(loadNewsEntries(dir)).toHaveLength(1);
+  });
+
+  it("returns an empty list for an empty folder", () => {
+    expect(loadNewsEntries(dir)).toEqual([]);
+  });
+
+  it("names the file when a date does not exist", () => {
+    write("2026-02-30-bad.md", entryFile("2026-02-30"));
+    expect(() => loadNewsEntries(dir)).toThrow(/2026-02-30-bad\.md/);
+  });
+
+  it.each(["added", "updated", "fixed"])("accepts the %s kind", (kind) => {
+    write("2026-01-02-kinds.md", entryFile("2026-01-02", kind));
+    expect(loadNewsEntries(dir)[0].kind).toBe(kind);
+  });
+
+  it("names the file when the kind is unknown", () => {
+    write("2026-01-02-odd.md", entryFile("2026-01-02", "shouted"));
+    expect(() => loadNewsEntries(dir)).toThrow(/2026-01-02-odd\.md[\s\S]*kind/);
+  });
+
+  it("rejects a file whose name date differs from its date", () => {
+    write("2026-01-02-mismatch.md", entryFile("2026-01-03"));
+    expect(() => loadNewsEntries(dir)).toThrow(/2026-01-02-mismatch\.md/);
+  });
+
   it("rejects a markdown file that is not named like an entry", () => {
     write("notes.md", entryFile("2026-01-02"));
     expect(() => loadNewsEntries(dir)).toThrow(/notes\.md/);
@@ -83,6 +114,29 @@ describe("loadNewsEntries", () => {
     write("2026-01-02-bare.md", "Just text, no frontmatter.\n");
     expect(() => loadNewsEntries(dir)).toThrow(
       /2026-01-02-bare\.md: no frontmatter/,
+    );
+  });
+
+  it("names the folder when it is missing", () => {
+    expect(() => loadNewsEntries(path.join(dir, "nope"))).toThrow(
+      /news folder not found: .*nope/,
+    );
+  });
+
+  it("loads the real content/news folder", () => {
+    const entries = loadNewsEntries();
+    expect(entries.length).toBeGreaterThan(0);
+  });
+
+  it("names the file when its front matter is not valid YAML", () => {
+    write("2026-01-01-broken.md", "---\ndate: [unclosed\n---\n");
+    expect(() => loadNewsEntries(dir)).toThrow(/2026-01-01-broken\.md/);
+  });
+
+  it("names the file when it has no front matter at all", () => {
+    write("2026-01-01-plain.md", "Just text\n");
+    expect(() => loadNewsEntries(dir)).toThrow(
+      /2026-01-01-plain\.md.*no frontmatter/,
     );
   });
 });
