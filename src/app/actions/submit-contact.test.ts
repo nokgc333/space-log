@@ -88,6 +88,15 @@ describe("submitContact", () => {
       await submitContact({ ...VALID, email: "taro@" });
       expect(fetchMock).not.toHaveBeenCalled();
     });
+
+    it.each([null, undefined, "text", 42, []])(
+      "does not crash on %j",
+      async (input) => {
+        const submitContact = await loadAction();
+        const result = await submitContact(input);
+        expect(result).toMatchObject({ ok: false, kind: "invalid" });
+      },
+    );
   });
 
   describe("the hidden trap field", () => {
@@ -140,6 +149,23 @@ describe("submitContact", () => {
         `${contact.mail.labels.topic}: ${contact.topics[0].label}`,
       );
     });
+
+    it.each(["name", "email", "company"])(
+      "sends nothing when %s holds a line break that could add a mail header",
+      async (field) => {
+        withMailSettings();
+        const submitContact = await loadAction();
+        const value =
+          field === "email"
+            ? "a@example.com\r\nBcc: attacker@example.test"
+            : "a\r\nBcc: attacker@example.test";
+
+        expect(await submitContact({ ...VALID, [field]: value })).toMatchObject(
+          { ok: false, kind: "invalid" },
+        );
+        expect(fetchMock).not.toHaveBeenCalled();
+      },
+    );
 
     it("does not log anything on success", async () => {
       withMailSettings();
@@ -223,6 +249,63 @@ describe("submitContact", () => {
         await submitContact(VALID);
       requestHeaders.current = { "x-forwarded-for": "198.51.100.7" };
       expect(await submitContact(VALID)).toEqual({ ok: true, mode: "demo" });
+    });
+
+    it("tells visitors apart by the first address of the forwarded list", async () => {
+      const submitContact = await loadAction();
+      requestHeaders.current = { "x-forwarded-for": "198.51.100.1, 10.0.0.1" };
+      for (let attempt = 1; attempt <= 5; attempt += 1)
+        await submitContact(VALID);
+      requestHeaders.current = { "x-forwarded-for": "198.51.100.1, 10.0.0.2" };
+      expect(await submitContact(VALID)).toMatchObject({
+        kind: "rate-limited",
+      });
+    });
+
+    it("falls back to the real-ip header, then to one shared visitor", async () => {
+      const submitContact = await loadAction();
+      requestHeaders.current = { "x-real-ip": "198.51.100.9" };
+      for (let attempt = 1; attempt <= 5; attempt += 1)
+        await submitContact(VALID);
+      expect(await submitContact(VALID)).toMatchObject({
+        kind: "rate-limited",
+      });
+
+      requestHeaders.current = { "x-real-ip": "198.51.100.10" };
+      expect(await submitContact(VALID)).toEqual({ ok: true, mode: "demo" });
+
+      requestHeaders.current = {};
+      for (let attempt = 1; attempt <= 5; attempt += 1)
+        await submitContact(VALID);
+      requestHeaders.current = {};
+      expect(await submitContact(VALID)).toMatchObject({
+        kind: "rate-limited",
+      });
+    });
+
+    it("reports a failure without a message when the network error is not an Error", async () => {
+      withMailSettings();
+      fetchMock.mockRejectedValue("offline");
+      const submitContact = await loadAction();
+      expect(await submitContact(VALID)).toEqual({ ok: false, kind: "failed" });
+      expect(JSON.stringify(errorLog.mock.calls)).toContain("Mail failed");
+    });
+  });
+
+  describe("with settings that cannot be read as text", () => {
+    it("reports a failure with a general message when something other than an Error is thrown", async () => {
+      vi.resetModules();
+      vi.doMock("@/lib/contact/mail-config", () => ({
+        resolveMailConfig: () => {
+          throw "broken";
+        },
+      }));
+      const { submitContact } = await import("./submit-contact");
+      expect(await submitContact(VALID)).toEqual({ ok: false, kind: "failed" });
+      expect(JSON.stringify(errorLog.mock.calls)).toContain(
+        "Mail settings failed",
+      );
+      vi.doUnmock("@/lib/contact/mail-config");
     });
   });
 });
