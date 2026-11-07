@@ -54,4 +54,72 @@ describe("createRateLimiter", () => {
     expect(limiter.check("a").allowed).toBe(true);
     expect(limiter.check("b").allowed).toBe(true);
   });
+
+  it("forgets the oldest visitors when memory is full", () => {
+    const limiter = createRateLimiter({
+      limit: 1,
+      windowMs: 1000,
+      maxKeys: 2,
+      now: () => 0,
+    });
+    limiter.check("a");
+    limiter.check("b");
+    limiter.check("c");
+    expect(limiter.size()).toBe(2);
+  });
+
+  it("rounds the waiting time up to whole seconds", () => {
+    let now = 0;
+    const limiter = createRateLimiter({
+      limit: 1,
+      windowMs: 10_000,
+      now: () => now,
+    });
+    limiter.check("a");
+    now = 4500;
+    expect(limiter.check("a").retryAfterSeconds).toBe(6);
+  });
+
+  it("forgets the visitor who was seen longest ago, not the one who came first", () => {
+    let now = 0;
+    const limiter = createRateLimiter({
+      limit: 2,
+      windowMs: 1000,
+      maxKeys: 2,
+      now: () => now,
+    });
+    limiter.check("a");
+    now = 100;
+    limiter.check("b");
+    now = 200;
+    limiter.check("a");
+    now = 300;
+    limiter.check("c");
+    expect(limiter.check("a").allowed).toBe(false);
+  });
+
+  it("does not forget anybody when a known visitor tries again while memory is full", () => {
+    const limiter = createRateLimiter({
+      limit: 2,
+      windowMs: 1000,
+      maxKeys: 2,
+      now: () => 0,
+    });
+    limiter.check("a");
+    limiter.check("a");
+    limiter.check("b");
+    limiter.check("b");
+    expect(limiter.size()).toBe(2);
+    expect(limiter.check("a").allowed).toBe(false);
+  });
+
+  it("does not hang when it may remember nobody", () => {
+    const limiter = createRateLimiter({
+      limit: 1,
+      windowMs: 1000,
+      maxKeys: 0,
+      now: () => 0,
+    });
+    expect(limiter.check("a").allowed).toBe(true);
+  });
 });
