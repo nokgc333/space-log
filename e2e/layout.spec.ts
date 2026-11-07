@@ -128,3 +128,177 @@ test("up to 1023px the hero content is centered both ways and its text is center
     expect(wide.dy).toBeGreaterThan(100);
   }
 });
+
+test("up to 1023px every section header and its text are centered from left to right, and start at the left edge from 1024px", async ({
+  page,
+}) => {
+  const read = () =>
+    page.evaluate(() =>
+      ["inversion", "news", "pipeline", "tools", "contact"].map((id) => {
+        const frame = document.querySelector(`#${id} > div`) as HTMLElement;
+        const header = frame.querySelector("header") as HTMLElement;
+        const style = getComputedStyle(frame);
+        const left =
+          frame.getBoundingClientRect().left + parseFloat(style.paddingLeft);
+        const width =
+          frame.clientWidth -
+          parseFloat(style.paddingLeft) -
+          parseFloat(style.paddingRight);
+        const box = header.getBoundingClientRect();
+        return {
+          dx: box.left + box.width / 2 - (left + width / 2),
+          startGap: box.left - left,
+          align: getComputedStyle(header).textAlign,
+        };
+      }),
+    );
+  for (const width of [1023, 768, 375, 320]) {
+    await openAt(page, width, 900);
+    for (const header of await read()) {
+      expect(Math.abs(header.dx)).toBeLessThanOrEqual(1);
+      expect(header.align).toBe("center");
+    }
+  }
+  for (const width of [1024, 1440]) {
+    await openAt(page, width, 900);
+    for (const header of await read()) {
+      expect(Math.abs(header.startGap)).toBeLessThanOrEqual(1);
+      expect(["start", "left"]).toContain(header.align);
+    }
+  }
+});
+
+test("up to 1023px the consent line and the send button of CONTACT are centered from left to right", async ({
+  page,
+}) => {
+  const read = () =>
+    page.evaluate(() => {
+      const form = document.querySelector("#contact form") as HTMLElement;
+      const label = form.querySelector("label.flex") as HTMLElement;
+      const parts = [...label.children].map((child) =>
+        child.getBoundingClientRect(),
+      );
+      const formBox = form.getBoundingClientRect();
+      const middle = formBox.left + formBox.width / 2;
+      const button = form
+        .querySelector('button[type="submit"]')!
+        .getBoundingClientRect();
+      const left = Math.min(...parts.map((part) => part.left));
+      const right = Math.max(...parts.map((part) => part.right));
+      return {
+        consentDx: (left + right) / 2 - middle,
+        consentLeft: left - formBox.left,
+        textAlign: getComputedStyle(label).textAlign,
+        buttonDx: button.left + button.width / 2 - middle,
+        buttonLeft: button.left - formBox.left,
+      };
+    });
+  for (const width of [1023, 768, 375, 320]) {
+    await openAt(page, width, 900);
+    const centered = await read();
+    expect(Math.abs(centered.consentDx)).toBeLessThanOrEqual(2);
+    expect(Math.abs(centered.buttonDx)).toBeLessThanOrEqual(1);
+    expect(centered.textAlign).toBe("center");
+  }
+  for (const width of [1024, 1440]) {
+    await openAt(page, width, 900);
+    const start = await read();
+    expect(Math.abs(start.consentLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(start.buttonLeft)).toBeLessThanOrEqual(1);
+    expect(["start", "left"]).toContain(start.textAlign);
+  }
+});
+
+test("up to 1023px the sections NEWS, PIPELINE, TOOLS and CONTACT have a narrower gap between their parts, and INVERSION keeps the wide one", async ({
+  page,
+}) => {
+  const gaps = () =>
+    page.evaluate(() =>
+      ["inversion", "news", "pipeline", "tools", "contact"].map(
+        (id) =>
+          getComputedStyle(document.querySelector(`#${id} > div`)!).rowGap,
+      ),
+    );
+  for (const width of [1023, 768, 375, 320]) {
+    await openAt(page, width, 900);
+    expect(await gaps()).toEqual(["48px", "24px", "24px", "24px", "24px"]);
+  }
+  for (const width of [1024, 1440]) {
+    await openAt(page, width, 900);
+    expect(await gaps()).toEqual(["48px", "48px", "48px", "48px", "48px"]);
+  }
+});
+
+test("the header and the footer keep their side padding, and the footer its text alignment and spread", async ({
+  page,
+}) => {
+  const cases = [
+    { width: 375, padding: 16 },
+    { width: 767, padding: 16 },
+    { width: 768, padding: 48 },
+    { width: 1023, padding: 48 },
+    { width: 1024, padding: 48 },
+    { width: 1440, padding: 48 },
+  ];
+  for (const { width, padding } of cases) {
+    await openAt(page, width, 900);
+    const frames = await page.evaluate(() => {
+      const header = getComputedStyle(
+        document.querySelector("header > div") as HTMLElement,
+      );
+      const footer = getComputedStyle(
+        document.querySelector("footer > div") as HTMLElement,
+      );
+      return {
+        headerPadding: parseFloat(header.paddingLeft),
+        footerPadding: parseFloat(footer.paddingLeft),
+        textAlign: footer.textAlign,
+        justify: footer.justifyContent,
+      };
+    });
+    expect(frames.headerPadding).toBe(padding);
+    expect(frames.footerPadding).toBe(padding);
+    if (width < 1024) {
+      expect(frames.textAlign).toBe("center");
+    } else {
+      expect(["start", "left"]).toContain(frames.textAlign);
+      expect(frames.justify).toBe("space-between");
+    }
+  }
+});
+
+test("the section frame and the INVERSION statements keep their gaps and their vertical centering", async ({
+  page,
+}) => {
+  for (const width of [1440, 1024, 375]) {
+    await openAt(page, width, 900);
+    const values = await page.evaluate(() => {
+      const frame = getComputedStyle(
+        document.querySelector("#news > div") as HTMLElement,
+      );
+      const area = getComputedStyle(
+        document.querySelector("#inversion p.font-bold")
+          ?.parentElement as HTMLElement,
+      );
+      const [lead, main] = [
+        ...(document.querySelector("#inversion p.font-bold")
+          ?.children as HTMLCollection),
+      ].map((part) => {
+        const style = getComputedStyle(part);
+        return parseFloat(style.lineHeight) / parseFloat(style.fontSize);
+      });
+      return {
+        columnGap: frame.columnGap,
+        rowGap: area.rowGap,
+        justify: area.justifyContent,
+        lead,
+        main,
+      };
+    });
+    if (width >= 1024) expect(values.columnGap).toBe("120px");
+    expect(values.rowGap).toBe("40px");
+    expect(values.justify).toBe("center");
+    expect(values.lead).toBeCloseTo(1.5, 2);
+    expect(values.main).toBeCloseTo(1.45, 2);
+  }
+});
