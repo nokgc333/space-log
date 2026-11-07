@@ -24,13 +24,8 @@ describe("design records", () => {
     const text = read(file);
 
     expect(text).toMatch(/^# ADR-\d{4}: .+/);
-    expect(text).toMatch(/^- Status: .+/m);
-    for (const heading of [
-      "Context",
-      "Decision",
-      "Consequences",
-      "Alternatives considered",
-    ]) {
+    expect(text).toMatch(/^- 状態: .+/m);
+    for (const heading of ["背景", "決定", "結果", "検討した代替案"]) {
       expect(text, heading).toMatch(new RegExp(`^## ${heading}$`, "m"));
     }
   });

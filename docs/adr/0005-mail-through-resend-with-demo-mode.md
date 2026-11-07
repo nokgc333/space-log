@@ -1,32 +1,32 @@
-# ADR-0005: Mail goes out through Resend, and the form runs in demo mode without settings
+# ADR-0005: メールは Resend で送り、設定が無いときはフォームをデモモードで動かす
 
-- Status: accepted (2026-10)
-- Related: `src/lib/contact/`, `.env.example`
+- 状態: 採用（2026-10）
+- 関連: `src/lib/contact/`、`.env.example`
 
-## Context
+## 背景
 
-The studio in the page is fictional, so there is no real domain or inbox at first. The contact form should still work end to end and be shown, and it should be switched to real mail without a code change.
+ページのスタジオは架空なので、最初は実際のドメインも受信箱も無い。それでもお問い合わせフォームは最初から最後まで動き、見せられる必要があり、コードを変えずに実際のメールへ切り替えられる必要がある。
 
-## Decision
+## 決定
 
-- The mail is sent with one `fetch` call to the Resend REST API; no SDK is installed. The request has a timeout of 10 seconds.
-- Three environment variables (`RESEND_API_KEY`, `CONTACT_MAIL_FROM`, `CONTACT_MAIL_TO`) are all-or-nothing:
-  - none set: demo mode. The form answers that the entry was accepted and says it is a demo; nothing is sent, and the server log notes it.
-  - all set: real sending.
-  - only some set: the form reports a failure, and the server log names the missing variables, never a value.
-- The subject and the labels of the mail come from the content files, not from the visitor, so a visitor cannot inject a header. Control characters are rejected in single-line fields.
-- On a failure, only the status is logged: never the entry, the address or the key.
+- メールは Resend の REST API への 1 回の `fetch` 呼び出しで送り、SDK は入れない。リクエストのタイムアウトは 10 秒にする。
+- 3 つの環境変数(`RESEND_API_KEY`、`CONTACT_MAIL_FROM`、`CONTACT_MAIL_TO`)は、全て設定するか、全く設定しないかとする:
+  - 全く設定しない: デモモード。フォームは入力を受け付けたこととデモであることを返し、何も送らず、サーバーのログにその旨を残す。
+  - 全て設定する: 実際に送信する。
+  - 一部だけ設定する: フォームは失敗を返し、サーバーのログには足りない変数の名前を残し、値は決して残さない。
+- メールの件名とラベルは、訪問者ではなくコンテンツのファイルから取るので、訪問者はヘッダーを注入できない。1 行の欄では制御文字を拒否する。
+- 失敗したときは状態だけをログに残し、入力、アドレス、キーは決して残さない。
 
-## Consequences
+## 結果
 
-- Good: no dependency; the form can be shown without any account; switching to real mail needs only the three settings on the host.
-- Bad: demo mode can hide a missing setting if nobody reads the answer; this is why the screen tells the visitor it is a demo.
+- 良い: 依存関係が無く、アカウント無しでフォームを見せられ、実際のメールへの切り替えにはホストの 3 つの設定だけでよい。
+- 悪い: 誰も応答を読まないと、デモモードで設定の不足が隠れるおそれがあるため、画面で訪問者にデモであると伝える。
 
-## Alternatives considered
+## 検討した代替案
 
-- The Resend SDK or an SMTP library: more code and dependencies for one request.
-- A form service or a `mailto:` link: the first sends the data to another party, the second cannot be tested.
+- Resend SDK または SMTP ライブラリ: 1 回のリクエストのためにコードと依存関係が増える。
+- フォームサービスまたは `mailto:` リンク: 前者はデータを第三者へ送り、後者はテストできない。
 
-## Revisit when
+## 見直す条件
 
-A domain and an inbox exist and the form should always send; then demo mode can be limited to development.
+ドメインと受信箱ができ、フォームが常に送信する必要が生じたら、デモモードを開発時だけにできる。

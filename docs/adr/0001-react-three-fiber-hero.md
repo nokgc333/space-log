@@ -1,35 +1,35 @@
-# ADR-0001: The hero is a React Three Fiber point cloud that starts after the first paint
+# ADR-0001: ヒーローは、最初の描画のあとに始まる React Three Fiber の点群にする
 
-- Status: accepted (2026-10), amended (2026-10-26: idle start)
-- Related: `src/components/scene/`, `src/components/scene/network/`, ADR-0006
+- 状態: 採用（2026-10）、改訂（2026-10-26: アイドル時間に開始）
+- 関連: `src/components/scene/`、`src/components/scene/network/`、ADR-0006
 
-## Context
+## 背景
 
-The hero is the one place where the page shows what the studio does: a network of signals in space. It has to move with the pointer, follow the light and dark themes, and never get in the way of the text that sits on top of it. A 3D library costs real bytes and main-thread time, so the scene must not delay the first paint or hurt the measured performance.
+ヒーローは、スタジオの仕事をページで示す唯一の場所であり、空間を行き交う信号のネットワークを表す。ポインターに合わせて動き、ライトとダークのテーマに従い、その上にある文章を決して妨げてはならない。3D ライブラリは実際の転送量とメインスレッドの時間を使うので、シーンが最初の描画を遅らせたり、測定した性能を損なったりしてはならない。
 
-## Decision
+## 決定
 
-- The scene is a React Three Fiber `Canvas` with 2,800 points placed in a sphere (radius 3). Each point is linked to up to 3 near neighbors (distance up to 0.55, found with a grid so the cost stays low). The pointer pushes points away, a click starts a ripple that travels along the links, and the colors follow the theme.
-- The drawing resolution goes up to a device pixel ratio of 2. WebGL lines are always 1 device pixel wide, so a lower ratio blurs them; their opacity is kept low instead of making them thicker.
-- The scene is loaded with a dynamic import without server rendering, and it starts in an idle period after the first paint (the browser's idle callback with a 1 second deadline, a timer where it does not exist). The hero text is therefore painted before any three.js code runs.
-- The frame loop only runs while the hero is on screen, the tab is visible and the visitor has not asked for reduced motion. Otherwise it draws on demand.
-- If the scene cannot start (no WebGL), an error boundary shows a short text instead.
-- All the logic (building the graph, moving the particles, spreading the signal, mixing the colors, mapping the pointer) lives in plain functions that do not import React, three or Next.js. A test enforces this. The React components only hand the results to the renderer.
-- The components are tested with the React Three Fiber test renderer; the logic is tested directly.
+- シーンは React Three Fiber の `Canvas` とし、球の中に 2,800 個の点を置く(半径 3)。各点を、近くの最大 3 個の点とつなぐ(距離は最大 0.55、負荷を低く保つため格子で探す)。ポインターが点を押しのけ、クリックがつながりに沿って伝わる波紋を起こし、色はテーマに従う。
+- 描画の解像度は、デバイスピクセル比で最大 2 とする。WebGL の線は常に 1 デバイスピクセルの幅なので、比率を下げるとぼやけるため、太くする代わりに不透明度を低く保つ。
+- シーンはサーバーで描画せずに動的 import で読み込み、最初の描画のあと、アイドル時間に始める(ブラウザのアイドルコールバックに 1 秒の期限を設け、対応していなければタイマーを使う)。このため、three.js のコードが動く前にヒーローの文章を描画する。
+- フレームループは、ヒーローが画面内にあり、タブが表示され、訪問者が動きを減らす設定にしていない間だけ動かす。それ以外は必要に応じて描画する。
+- シーンを開始できないとき(WebGL が無いとき)は、エラーバウンダリが代わりに短い文章を表示する。
+- 全てのロジック(グラフの構築、粒子の移動、信号の伝播、色の混合、ポインターの対応づけ)は、React、three、Next.js を import しない普通の関数に置く。テストでこれを強制する。React のコンポーネントは、結果をレンダラーに渡すだけにする。
+- コンポーネントは React Three Fiber のテストレンダラーで検査し、ロジックは直接検査する。
 
-## Consequences
+## 結果
 
-- Good: the first paint does not wait for the scene; the logic can be tested and read without a renderer; reduced motion and hidden tabs cost nothing.
-- Bad: three.js and React Three Fiber add about 245 KB (924 KB before compression) to the home page, and more than half of that is not used. In a headless browser without a GPU (the CI) the scene is drawn in software, so the blocking time of the home page is several seconds there; see ADR-0006 for how the budgets deal with that.
+- 良い: 最初の描画がシーンを待たず、レンダラー無しでロジックを検査して読め、動きを減らす設定や隠れたタブでは負荷がかからない。
+- 悪い: three.js と React Three Fiber が、ホームに約 245 KB(圧縮前は 924 KB)を足し、その半分以上は使わない。GPU の無いヘッドレスブラウザ(CI)ではシーンをソフトウェアで描くので、そこでのホームのブロッキング時間は数秒になるため、予算での扱いは ADR-0006 を参照する。
 
-## Alternatives considered
+## 検討した代替案
 
-- Plain three.js without React Three Fiber: less code to download, but the scene lifecycle, theme changes and resizing would have to be written by hand next to a React app.
-- A 2D canvas or CSS: cheaper, but the depth and the rotating network are the point of the page.
-- A video or a still image: the cheapest, but it removes the interaction.
-- Lowering the particle count or the pixel ratio on weak devices: not done; it changes the chosen look, and the measured cost on real hardware is small.
+- React Three Fiber を使わない素の three.js: ダウンロードするコードは減るが、シーンのライフサイクル、テーマの変更、サイズ変更を React アプリと並べて手で書く必要がある。
+- 2D の canvas または CSS: 負荷は小さいが、奥行きと回転するネットワークがこのページの要点である。
+- 動画または静止画: 負荷は最も小さいが、操作への反応が無くなる。
+- 非力な端末で粒子の数やピクセル比を下げる: 選んだ見た目が変わり、実機で測った負荷は小さいので、採用しない。
 
-## Revisit when
+## 見直す条件
 
-- The home page performance budgets cannot be met without changing the scene.
-- A lighter renderer with the same features is available.
+- シーンを変えなければ、ホームの性能の予算を満たせなくなる。
+- 同じ機能を持つ、より軽いレンダラーが使えるようになる。

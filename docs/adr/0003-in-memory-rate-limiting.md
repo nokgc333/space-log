@@ -1,31 +1,31 @@
-# ADR-0003: The contact form is rate limited in memory
+# ADR-0003: お問い合わせフォームの回数制限はメモリ内で行う
 
-- Status: accepted (2026-10)
-- Related: `src/lib/security/rate-limit.ts`, `src/app/actions/submit-contact.ts`
+- 状態: 採用（2026-10）
+- 関連: `src/lib/security/rate-limit.ts`、`src/app/actions/submit-contact.ts`
 
-## Context
+## 背景
 
-The contact form sends mail, so repeated posts could use up the sending quota or flood the inbox. The site is small and has no data store.
+お問い合わせフォームはメールを送るので、繰り返し送信されると送信枠を使い切ったり、受信箱が埋まったりするおそれがある。サイトは小さく、データストアは無い。
 
-## Decision
+## 決定
 
-- A sliding window of attempt times is kept per visitor in a `Map`: 5 attempts in 10 minutes. A wrong entry counts as an attempt. When the limit is reached, the answer carries the number of seconds to wait.
-- The visitor is identified by the first address of `x-forwarded-for`, then `x-real-ip`; visitors without either share one `unknown` key.
-- **Assumption:** this is only sound behind a host that sets these headers itself. On Vercel the platform writes the connecting address into `x-forwarded-for`, so a visitor cannot choose the first address. Behind a proxy that passes the visitor's own header through, a visitor could send a new first address with every request and never reach the limit. Before moving the site to such a host, switch to the address that the host guarantees. Tests pin that the first address is the one counted: later addresses in the list do not give a visitor a new allowance, and without any header all visitors share one key.
-- The map holds at most 5,000 visitors. When it is full, the visitor who has been idle the longest is dropped; expired visitors always come first, so no separate cleanup is needed.
-- The server action does not trust its caller: it also checks the limit, validates the input again with the same schema, ignores entries that fill the hidden trap field and checks the mail settings.
+- 試行時刻のスライディングウィンドウを、訪問者ごとに `Map` で持ち、5 回を 10 分あたりの上限とする。誤った入力も試行に数える。上限に達したときは、待つ秒数を応答に含める。
+- 訪問者は `x-forwarded-for` の先頭のアドレスで識別し、無ければ `x-real-ip` を使い、どちらも無い訪問者は 1 つの `unknown` キーを共有する。
+- **前提:** これは、ホスト自身がこれらのヘッダーを設定する場合に限って妥当である。Vercel では、プラットフォームが接続元のアドレスを `x-forwarded-for` に書くので、訪問者は先頭のアドレスを選べない。訪問者自身のヘッダーをそのまま通すプロキシの背後では、訪問者はリクエストごとに新しい先頭のアドレスを送れて、上限に達しない。そのようなホストへ移す前に、ホストが保証するアドレスへ切り替える。テストでは先頭のアドレスを数えることを固定し、リストの後続のアドレスでは訪問者の送信枠が増えず、ヘッダーが全く無ければ全訪問者が 1 つのキーを共有することを確かめる。
+- マップには最大 5,000 人の訪問者を保持する。満杯のときは、最も長く使われていない訪問者を削除し、期限切れの訪問者が常に先になるので、別の掃除処理は要らない。
+- Server Action は呼び出し元を信用せず、回数制限も検査し、同じスキーマで入力をもう一度検証し、隠したおとり欄を埋めた入力を無視し、メールの設定を検査する。
 
-## Consequences
+## 結果
 
-- Good: no dependency and no external service; about 50 lines, fully tested with an injectable clock.
-- Bad: on a serverless host every instance has its own counter, and a cold start clears it, so a distributed attack is not stopped. The forwarded address is only reliable behind a trusted proxy.
-- Backed up by the limits on field lengths, the trap field, the server-side validation and the quota of the mail service.
+- 良い: 依存関係も外部サービスも無く、約 50 行で、差し替え可能な時計を使って全て検査している。
+- 悪い: サーバーレスのホストでは、インスタンスごとにカウンターを持ち、コールドスタートで消えるので、分散した攻撃は止められない。転送されたアドレスを信用できるのは、信頼するプロキシの背後だけである。
+- 欄の長さの上限、おとり欄、サーバーでの検証、メールサービスの送信枠で補う。
 
-## Alternatives considered
+## 検討した代替案
 
-- A shared store (Redis, a key-value service): exact, but it adds an account and a setting for a site of this size.
-- A CAPTCHA: more effort for visitors; the trap field and the limit are enough for now.
+- 共有ストア(Redis、キーバリューサービス): 正確だが、この規模のサイトにアカウントと設定を足すことになる。
+- CAPTCHA: 訪問者の手間が増え、今はおとり欄と回数制限で足りる。
 
-## Revisit when
+## 見直す条件
 
-Abuse is observed or the traffic grows. Only the implementation of the limiter needs to change; the caller keeps the same call.
+不正利用が見られるか、アクセスが増える。回数制限の実装だけを変えればよく、呼び出し元は同じ呼び出しを使い続ける。

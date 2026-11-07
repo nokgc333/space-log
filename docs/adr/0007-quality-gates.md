@@ -1,33 +1,33 @@
-# ADR-0007: Limits on size and complexity, a coverage floor and checks before each commit and push
+# ADR-0007: 大きさと複雑度の上限、カバレッジの下限、コミット前と push 前の検査
 
-- Status: accepted (2026-10)
-- Related: `eslint.config.mjs`, `vitest.config.mts`, `.husky/`, `docs/adr/`
+- 状態: 採用（2026-10）
+- 関連: `eslint.config.mjs`、`vitest.config.mts`、`.husky/`、`docs/adr/`
 
-## Context
+## 背景
 
-A showcase repository is read, not only run. Long and tangled functions, untested corners and a red build cost the reader's trust.
+作例のリポジトリは、動かすだけでなく読まれる。長く入り組んだ関数、テストしていない箇所、失敗したビルドは、読み手の信頼を損なう。
 
-## Decision
+## 決定
 
-- ESLint fails on functions with a complexity above 10, more than 80 lines, nesting deeper than 4 or more than 4 parameters, and on source files longer than 200 lines. Test files are not counted.
-- The unit tests run with coverage in the CI and fail below 95% for statements, branches, functions and lines. Only the font declarations and the root layout are left out, because the end-to-end tests check them.
-- The logic of the 3D scene must not import React, three or Next.js (a test checks the imports), so it can be tested without a renderer.
-- Before a commit, staged files are linted, formatted and scanned for secrets. Before a push, the quick checks run (lint, types, format, unit tests).
-- A Linux run of the three CI jobs can be reproduced locally in a container, because a layout test once passed on macOS and failed on the CI (small letters are rounded differently).
-- End-to-end tests that measure text widths must also pass with every letter about 10% wider.
-- A failing check is investigated before any limit is loosened.
-- The code carries almost no comments. The reasons for a choice live in these records and in the README, where they can be read and kept up to date, and the types and the tests document what the code does.
+- ESLint は、複雑度が 10 を超える関数、80 行を超える関数、入れ子が 4 段を超える関数、引数が 4 個を超える関数、200 行を超えるソースファイルを失敗にする。テストファイルは数えない。
+- 単体テストは CI でカバレッジつきで動かし、文、分岐、関数、行のどれかが 95% を下回ると失敗する。フォントの宣言とルートレイアウトだけは、E2E テストで確かめるので対象から外す。
+- 3D シーンのロジックは React、three、Next.js を import してはならず(import をテストで検査する)、レンダラー無しでテストできるようにする。
+- コミット前に、ステージしたファイルを lint、整形、秘密情報の検査にかける。push 前に、短時間の検査(lint、型、整形、単体テスト)を動かす。
+- レイアウトのテストが一度 macOS で通り CI で失敗したため(小さい文字の丸め方が違う)、3 つの CI ジョブの Linux での実行を、手元のコンテナで再現できるようにする。
+- 文字幅を測る E2E テストは、全ての文字の幅を約 10% 広げても通らなければならない。
+- 検査が失敗したら、上限や下限を緩める前に原因を調べる。
+- コードにはほとんどコメントを置かない。選択の理由はこの記録と README に置き、読んで最新に保てるようにし、コードが何をするかは型とテストで示す。
 
-## Consequences
+## 結果
 
-- Good: the limits are in code and in CI, not in a document; refactors are protected by tests that were written first.
-- Bad: the checks take time (about 20 seconds before a push), and a few tests are long simulations with an explicit timeout.
+- 良い: 上限と下限がコードと CI にあり、文書だけにとどまらず、先に書いたテストがリファクタリングを守る。
+- 悪い: 検査に時間がかかり(push 前は約 20 秒)、一部のテストは明示的なタイムアウトを持つ長い模擬実行になる。
 
-## Alternatives considered
+## 検討した代替案
 
-- Limits as guidelines only: they drift.
-- A lower coverage floor: the remaining gaps are small, so a high floor costs little.
+- 上限と下限を指針にとどめる: 守られなくなる。
+- カバレッジの下限を下げる: 残る未検査箇所は小さいので、下限を高くしても負担は少ない。
 
-## Revisit when
+## 見直す条件
 
-A limit forces a worse structure than the code it replaces.
+上限や下限のために、置き換え前のコードより構造が悪くなる。

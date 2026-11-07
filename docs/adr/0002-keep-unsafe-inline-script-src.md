@@ -1,46 +1,46 @@
-# ADR-0002: The script policy keeps `'unsafe-inline'`
+# ADR-0002: スクリプトのポリシーは `'unsafe-inline'` を残す
 
-- Status: accepted (2026-10-26, after measuring)
-- Related: `src/lib/security/headers.ts`, `e2e/security.spec.ts`
+- 状態: 採用（2026-10-26、測定後）
+- 関連: `src/lib/security/headers.ts`、`e2e/security.spec.ts`
 
-## Context
+## 背景
 
-Removing `'unsafe-inline'` from `script-src` makes cross-site scripting harder. A statically generated Next.js page contains inline scripts (the theme script, the bundler bootstrap and the server-rendered data), so a strict policy needs a nonce or hashes.
+`'unsafe-inline'` を `script-src` から外すと、クロスサイトスクリプティングが難しくなる。静的に生成した Next.js のページにはインラインスクリプト(テーマのスクリプト、バンドラーの起動処理、サーバーで描画したデータ)があるので、厳しいポリシーには nonce またはハッシュが要る。
 
-## Decision
+## 決定
 
-`script-src 'self' 'unsafe-inline'` stays. The other directives stay strict (`default-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`).
+`script-src 'self' 'unsafe-inline'` を残す。他の指令は厳しいままにする(`default-src 'self'`、`object-src 'none'`、`frame-ancestors 'none'`、`base-uri 'self'`、`form-action 'self'`)。
 
-## Measurements (production build, local, median of 40 requests)
+## 測定値 (本番ビルド、手元、40 リクエストの中央値)
 
-| Approach                                       | Home page    | Privacy page | Caching                                     |
-| ---------------------------------------------- | ------------ | ------------ | ------------------------------------------- |
-| Static pages, `'unsafe-inline'` (now)          | 1.6 ms       | 1.3 ms       | cacheable by a CDN                          |
-| Nonce from `proxy.ts`                          | 5.9 ms       | 4.2 ms       | `no-store`, every page rendered per request |
-| Hashes                                         | not possible | not possible |                                             |
-| Subresource integrity with `script-src 'self'` | not usable   |              |                                             |
+| 方法                                         | ホーム   | プライバシー | キャッシュ                                     |
+| -------------------------------------------- | -------- | ------------ | ---------------------------------------------- |
+| 静的なページ、`'unsafe-inline'` (現在)       | 1.6 ms   | 1.3 ms       | CDN でキャッシュできる                         |
+| `proxy.ts` による nonce                      | 5.9 ms   | 4.2 ms       | `no-store`、全ページをリクエストごとに描画する |
+| ハッシュ                                     | 不可能   | 不可能       |                                                |
+| `script-src 'self'` によるサブリソース完全性 | 使用不可 |              |                                                |
 
-- A nonce works without violations once the theme provider receives it (the end-to-end policy checks pass), but it makes every page dynamic. On a serverless host that also adds start-up time and removes the edge cache.
-- Of the four executable inline scripts per page, two (the bundler bootstrap and the server data) change with every build and every page. A static `headers()` cannot list their hashes.
-- With subresource integrity the inline scripts of a static page are blocked.
-- Style attributes cannot carry a nonce, so `style-src` could only be tightened for style elements, which gains little.
+- nonce はテーマのプロバイダーに渡せば違反無しで動く(ポリシーの E2E 検査が通る)が、全ページが動的になる。サーバーレスのホストでは、起動時間も加わり、エッジキャッシュも効かなくなる。
+- 各ページの実行可能なインラインスクリプト 4 つのうち、2 つ(バンドラーの起動処理とサーバーのデータ)は、ビルドごと、ページごとに変わる。静的な `headers()` では、そのハッシュを列挙できない。
+- サブリソース完全性を使うと、静的なページのインラインスクリプトがブロックされる。
+- style 属性には nonce を付けられないので、`style-src` を厳しくできるのは style 要素だけであり、得るものは少ない。
 
-## Alternatives considered
+## 検討した代替案
 
-The table above lists them: a nonce (works, but every page becomes dynamic), hashes (the scripts change per build and per page), subresource integrity (blocks the inline scripts of a static page) and a stricter `style-src` (style attributes cannot carry a nonce).
+上の表に挙げたとおり、nonce(動くが全ページが動的になる)、ハッシュ(スクリプトがビルドごと、ページごとに変わる)、サブリソース完全性(静的なページのインラインスクリプトをブロックする)、より厳しい `style-src`(style 属性には nonce を付けられない)である。
 
-## Why this is acceptable
+## なぜ許容できるか
 
-The pages show no visitor input: the contact form answers with fixed texts and the policy and the page texts come from the repository. There is no realistic route for injected markup, and the site is a showcase of speed that guards its budgets in CI.
+ページは訪問者の入力を表示せず、お問い合わせフォームは固定の文章を返し、ポリシーとページの文章はリポジトリから来る。マークアップを注入する現実的な経路は無く、サイトは速度を示す作例として CI で予算を守る。
 
-## Consequences
+## 結果
 
-- Good: static delivery and the performance budgets are kept.
-- Bad: the policy gives no second line of defense against injected scripts.
-- A check in the end-to-end suite opens the home page, the privacy page and the contact flow and fails on any policy violation.
+- 良い: 静的な配信と性能の予算を保てる。
+- 悪い: 注入されたスクリプトに対する、2 段目の防御をポリシーでは提供しない。
+- E2E テストの検査で、ホーム、プライバシー、お問い合わせの流れを開き、ポリシー違反が 1 つでもあれば失敗する。
 
-## Revisit when
+## 見直す条件
 
-- A feature reflects visitor input or external content into the page, or a third-party script is added.
-- A measurement on the real host shows that dynamic rendering is acceptable.
-- Next.js supports hash-based policies for static pages.
+- 訪問者の入力や外部のコンテンツをページに反映する機能、または第三者のスクリプトを足す。
+- 実際のホストで測定し、動的な描画を許容できると分かる。
+- Next.js が静的なページのハッシュによるポリシーに対応する。

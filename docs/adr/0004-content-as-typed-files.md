@@ -1,32 +1,32 @@
-# ADR-0004: The texts live in typed files and are checked with schemas
+# ADR-0004: 文章は型のあるファイルに置き、スキーマで検査する
 
-- Status: accepted (2026-10)
-- Related: `content/`, `src/lib/content/schema/`, `src/lib/news/`
+- 状態: 採用（2026-10）
+- 関連: `content/`、`src/lib/content/schema/`、`src/lib/news/`
 
-## Context
+## 背景
 
-The page has many texts, numbers and links. If they sit inside the components, changing a sentence means reading code, and a typo in a structure shows up only in the browser.
+ページには多くの文章、数値、リンクがある。コンポーネントの中に置くと、文を変えるためにコードを読む必要があり、構造の書き間違いはブラウザでしか分からない。
 
-## Decision
+## 決定
 
-- Every text, number and link of a section is in `content/` as a typed TypeScript object. Components only receive these objects as props and hold no copy of their own.
-- Each file is validated with a zod schema, one schema file per section in `src/lib/content/schema/`. The objects are parsed when the module loads, so wrong content fails the build and the tests.
-- News entries are Markdown files, one per entry (`content/news/YYYY-MM-DD-slug.md`) with a front matter of date, kind and text. They are read when the page is built, validated with the same kind of schema and sorted newest first. Adding an entry means adding one file.
-- The texts the server needs to trust (the contact form messages and the mail subject) are also in `content/`; the server reads them from there, never from the request.
-- The schemas run on the server only; the components import types, so zod is not sent to the browser for them.
+- セクションの全ての文章、数値、リンクは、型のある TypeScript のオブジェクトとして `content/` に置く。コンポーネントは、これらのオブジェクトを props として受け取るだけにし、自分では文章を持たない。
+- 各ファイルを zod のスキーマで検証し、`src/lib/content/schema/` にセクションごとに 1 つのスキーマファイルを置く。モジュールの読み込み時にオブジェクトをパースするので、誤ったコンテンツはビルドとテストを失敗させる。
+- お知らせは、日付、種類、文章のフロントマターを持つ Markdown ファイルとし、項目ごとに 1 つ置く(`content/news/YYYY-MM-DD-slug.md`)。ページのビルド時に読み、同種のスキーマで検証し、新しい順に並べる。項目を足すには、ファイルを 1 つ足す。
+- サーバーが信用する必要のある文章(お問い合わせフォームのメッセージとメールの件名)も `content/` に置き、サーバーはそこから読み、リクエストからは決して読まない。
+- スキーマはサーバーだけで動き、コンポーネントは型を import するので、そのために zod がブラウザへ送られることは無い。
 
-## Consequences
+## 結果
 
-- Good: a change of wording does not touch a component; the types follow the content; invalid content cannot be deployed.
-- Bad: a change of text is a code change (a pull request), not an edit in a tool for editors.
+- 良い: 言葉の変更でコンポーネントに触れず、型がコンテンツに従い、不正なコンテンツはデプロイできない。
+- 悪い: 文章の変更はコードの変更(プルリクエスト)になり、編集者向けのツールでの編集にはならない。
 
-## Alternatives considered
+## 検討した代替案
 
-- A headless CMS or a git-based CMS: useful for editors, but this site has one author and a small amount of text.
-- MDX for every section: the sections are structured data (lists, labels), not prose.
-- JSON files: no types and no comments for the author, and the schema would have to be kept in step by hand.
-- An i18n library: the site has one language.
+- ヘッドレス CMS または git ベースの CMS: 編集者には役立つが、このサイトは作者が 1 人で、文章も少ない。
+- 全セクションで MDX: セクションは、散文ではなく構造化したデータ(リスト、ラベル)である。
+- JSON ファイル: 作者が使える型とコメントが無く、スキーマとの整合を手で保つ必要がある。
+- i18n ライブラリ: サイトの言語は 1 つである。
 
-## Revisit when
+## 見直す条件
 
-A second person edits the texts, or the site needs more than one language.
+文章を編集する人がもう 1 人増えるか、サイトに複数の言語が必要になる。
