@@ -177,3 +177,23 @@ describe("branch protection policy", () => {
     expect(policy.allow_deletions).toBe(false);
   });
 });
+
+describe("Security workflow", () => {
+  const security = read(".github/workflows/security.yml");
+
+  it("fails the build on high severity production vulnerabilities", () => {
+    expect(security).toContain("npm audit --omit=dev --audit-level=high");
+  });
+
+  it("reviews the dependencies added by a pull request", () => {
+    expect(security).toContain("actions/dependency-review-action");
+    expect(security).toMatch(/fail-on-severity: high/);
+  });
+
+  it("scans the source with CodeQL and runs weekly to notice new advisories", () => {
+    expect(security).toContain("github/codeql-action/init");
+    expect(security).toContain("github/codeql-action/analyze");
+    expect(security).toContain("security-events: write");
+    expect(security).toMatch(/schedule:\s*\n\s+- cron:/);
+  });
+});

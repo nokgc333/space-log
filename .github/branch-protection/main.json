@@ -4,7 +4,9 @@
     "contexts": [
       "Lint, typecheck, format, unit test, build",
       "E2E",
-      "Performance Budget"
+      "Performance Budget",
+      "Dependency Audit",
+      "CodeQL"
     ]
   },
   "enforce_admins": false,
