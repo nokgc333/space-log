@@ -1,3 +1,4 @@
+import { ContactShortcut } from "@/components/layout/contact-shortcut";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { site } from "@/lib/content";
@@ -8,6 +9,7 @@ export default function Home() {
       <SiteHeader site={site} />
       <main id="main"></main>
       <SiteFooter site={site} year={new Date().getFullYear()} />
+      <ContactShortcut label={site.contactShortcut} />
     </>
   );
 }
