@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -225,6 +225,90 @@ describe("ToolsSection", () => {
       await userEvent.click(next());
       expect(bodyRows()).toHaveLength(TOOLS_PER_PAGE);
       expect(screen.getAllByRole("row")).toHaveLength(2);
+    });
+  });
+
+  describe("overflow", () => {
+    it("cuts a long summary at two lines with an ellipsis", () => {
+      render(<ToolsSection tools={TOOLS} />);
+      expect(screen.getByText("summary one")).toHaveClass("line-clamp-2");
+    });
+
+    it("cuts the tags at two lines with an ellipsis", () => {
+      render(<ToolsSection tools={TOOLS} />);
+      const list = within(
+        screen.getByRole("row", { name: /alpha-tool/ }),
+      ).getByRole("list");
+      expect(list.parentElement).toHaveClass("line-clamp-2");
+    });
+
+    it("shows the filler rows without a visible line", () => {
+      const tools: Tools = {
+        ...TOOLS,
+        entries: Array.from({ length: TOOLS_PER_PAGE + 1 }, (_, index) => ({
+          id: `tool-${index + 1}`,
+          name: `tool-${index + 1}`,
+          tags: ["Tag"],
+          summary: `summary ${index + 1}`,
+          detail: `detail ${index + 1}`,
+        })),
+      };
+      const { container } = render(<ToolsSection tools={tools} />);
+      fireEvent.click(screen.getByRole("button", { name: "next tools" }));
+      const fillers = container.querySelectorAll("tbody tr[aria-hidden]");
+      expect(fillers).toHaveLength(TOOLS_PER_PAGE - 1);
+      const columnCount = screen.getAllByRole("columnheader").length;
+      for (const filler of fillers) {
+        expect(filler.querySelector("td")).toHaveAttribute(
+          "colspan",
+          String(columnCount),
+        );
+        expect(filler).toHaveClass("border-transparent");
+        expect(filler).not.toHaveClass("border-rule");
+      }
+    });
+  });
+
+  describe("repository link", () => {
+    const linkName = "alpha-tool on GitHub (opens in a new tab)";
+
+    it("opens the repository in a new tab from the icon", () => {
+      render(<ToolsSection tools={TOOLS} />);
+      const link = screen.getByRole("link", { name: linkName });
+      expect(link).toHaveAttribute(
+        "href",
+        "https://github.com/example/alpha-tool",
+      );
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link.getAttribute("rel")).toContain("noopener");
+      expect(link.getAttribute("rel")).toContain("noreferrer");
+      expect(link.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("puts the icon in the first cell of the row, before the tool name", () => {
+      render(<ToolsSection tools={TOOLS} />);
+      const row = screen.getByRole("row", { name: /alpha-tool/ });
+      const cells = row.querySelectorAll("td");
+      expect(cells).toHaveLength(4);
+      expect(cells[0]).toContainElement(
+        screen.getByRole("link", { name: linkName }),
+      );
+      expect(cells[1]).toContainElement(
+        screen.getByRole("button", { name: /alpha-tool/ }),
+      );
+    });
+
+    it("centers the icon vertically in its row", () => {
+      render(<ToolsSection tools={TOOLS} />);
+      const cell = screen.getByRole("link", { name: linkName }).closest("td");
+      expect(cell).toHaveClass("align-middle");
+    });
+
+    it("leaves the cell empty for a tool that has no repository yet", () => {
+      render(<ToolsSection tools={TOOLS} />);
+      const row = screen.getByRole("row", { name: /beta-tool/ });
+      expect(within(row).queryByRole("link")).toBeNull();
+      expect(row.querySelectorAll("td")).toHaveLength(4);
     });
   });
 });
