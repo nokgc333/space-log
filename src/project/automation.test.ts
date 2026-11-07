@@ -51,3 +51,28 @@ describe("pinned Node and npm", () => {
     }
   });
 });
+
+describe("Dependabot", () => {
+  const config = read(".github/dependabot.yml");
+
+  it("watches npm and GitHub Actions weekly", () => {
+    expect(config).toContain("package-ecosystem: npm");
+    expect(config).toContain("package-ecosystem: github-actions");
+    expect(config.match(/interval: weekly/g)).toHaveLength(2);
+  });
+
+  it("groups minor and patch updates to keep the number of pull requests down", () => {
+    expect(config).toMatch(/minor-and-patch:/);
+  });
+
+  it("does not propose major versions that upstream constraints block", () => {
+    for (const name of ["typescript", "@types/node"]) {
+      expect(config, name).toContain(name);
+    }
+    expect(config).toContain("version-update:semver-major");
+  });
+
+  it("does not propose a TypeScript version that typescript-eslint does not support yet", () => {
+    expect(config).toMatch(/typescript\s+versions: \[">=6\.1\.0"\]/);
+  });
+});
